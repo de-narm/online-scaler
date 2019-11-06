@@ -1,0 +1,92 @@
+\documentclass[]{article}
+
+\usepackage{graphicx}
+\usepackage{float}
+
+%opening
+\title{Client-Side Many-Valued \protect\\ Context Scaling \protect\\ Featurelist}
+
+\begin{document}
+
+\maketitle
+
+\newpage
+\section{Panel}
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{panel-1.png}
+	\caption{The panel to select files (both versions)}
+	\label{fig:p1}
+\end{figure}
+
+\subsection{Features}
+\begin{itemize}
+	\item Select any local .csv file with a mv-context
+	\item Checkbox to mark existence of a header line
+	\item Different input box to instead reuse a .json file with an old configuration
+	\item Button to second panel
+\end{itemize}
+
+\newpage
+\section{Panel}
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{panel-2.png}
+	\caption{Preselection panel}
+	\label{fig:p2}
+\end{figure}
+
+\subsection{Features}
+\begin{itemize}
+	\item Select all Attributes (multi-select input) to scale (gray) and to exclude (white)
+	\item Preview of the context in scroll-able box (x and y axis)
+	\item Button to third panel
+\end{itemize}
+
+\newpage
+\section{Panel}
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{panel-3.png}
+	\caption{Scaling panel}
+	\label{fig:p2}
+\end{figure}
+\begin{itemize}
+	\item Preselected scaling option for each attribute
+	\item Option to choose different scaling method
+	\item Descriptive statistics for values of each attribute
+	\item Settings to change scaling
+	\item Button to iterate attributes
+	\item Selection to jump between attributes
+	\item Last "attribute" is export panel
+\end{itemize}
+
+\subsection{Statistics}
+\begin{itemize}
+	\item Based on data type mean, median, most common element etc.
+	\item Distribution graphs
+\end{itemize}
+
+\subsection{Settings}
+\begin{itemize}
+	\item Nominal
+	\item Ordinal
+		\begin{itemize}
+			\item Sort Attributes
+			\item Different incomparable groups
+		\end{itemize}
+	\item Numeric
+	    \begin{itemize}
+	    	\item Predefined intervals
+	    	\item Set custom intervals
+	    \end{itemize}
+    \item Custom
+    	\begin{itemize}
+    		\item Only edit context scale
+    	\end{itemize}
+\end{itemize}
+
+\subsection{Export}
+	\begin{itemize}
+		\item Last "attribute"
+		\item Only download button for .json config-file and .ctx scaled context file
+	\end{itemize}
+
+\end{document}

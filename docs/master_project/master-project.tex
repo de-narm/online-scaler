@@ -1,0 +1,25 @@
+\documentclass[]{article}
+
+%opening
+\title{Client-Side Many-Valued Context Scaling}
+\author{Sebastian Benner}
+
+\begin{document}
+
+\maketitle
+
+\section{Task}
+Implementation of a client-side web-application to scale many-valued contexts in clojurescript using Reagent and Re-Frame. The CSS is done by using Bulma.
+
+\subsection{Timetable}
+There are several major steps to be taken:
+\begin{enumerate}
+	\item A basic skeleton which reads in .csv files, scales them all in the most basic way and exports the resulting context as file. (2-3 weeks)
+	\item Implement functions for all types (nominal, ordinal and numeric) of scaling. (1-2 weeks)
+	\item Build an interface for the user to manipulate the scaling for each attribute with some helpful statistics. (3-4 weeks)
+	\item Export a config-file which can later be imported to quickly change the method of scaling. (1 week)
+	\item Implement algorithms to suggest more optimal scaling and minimize user input. (1-2 weeks)
+	\item Give more detailed statistics and graphs for each attribute. (optional)
+\end{enumerate}
+Overall time for implementation: 8-12 weeks. The remaining weeks are to be used for the written part and presentation.
+\end{document}
