@@ -2,7 +2,7 @@
   (:require 
    [re-frame.core :as re-frame]))
 
-;;; Upload
+;;;-Upload---------------------------------------------------------------------
 
 (re-frame/reg-sub
  ::mv-ctx-file-name
@@ -14,21 +14,38 @@
   (fn [db _]
     (get-in db [:mv-ctx :file])))
 
-;;; Selection
+;;;-Selection------------------------------------------------------------------
 
 (re-frame/reg-sub
  ::mv-ctx-attributes
   (fn [db _]
     (get-in db [:mv-ctx :attributes])))
 
-;;; Export
+;;;-Export---------------------------------------------------------------------
 
 (re-frame/reg-sub
  ::url
   (fn [db _]
     (get-in db [:url])))
 
-;;; Panel
+;;;-Scaling--------------------------------------------------------------------
+
+(re-frame/reg-sub
+ ::current-attribute
+  (fn [db _]
+    (get-in db [:selection :current-attribute])))
+
+(re-frame/reg-sub
+ ::attribute-list
+  (fn [db _]
+    (get-in db [:selection :attributes])))
+
+(re-frame/reg-sub
+ ::attribute-measure
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (first attribute) :measure])))
+
+;;;-Panel----------------------------------------------------------------------
 
 (re-frame/reg-sub
  ::panel
