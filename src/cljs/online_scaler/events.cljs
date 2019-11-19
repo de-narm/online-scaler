@@ -18,7 +18,7 @@
  ::set-mv-ctx 
   (fn [db [_ result]]
     ;; Save file as [["First" "line" "in" ".csv"] ["Second" "line"]]
-    (assoc-in db [:mv-ctx :file] (map #(split % #",") 
+    (assoc-in db [:mv-ctx :file] (map #(split % #", |,") 
                                       (split result #"\n")))))
 
 (re-frame/reg-fx
@@ -55,22 +55,46 @@
                                       (mapv
                                         #(vector (str "Attribute#" %) true)
                                         (range (count first-line))))]
-          (assoc-in db [:mv-ctx :attributes] attribute-vector))}))
+          (-> db
+            (assoc-in [:mv-ctx :attributes] attribute-vector)
+            (assoc-in [:scaling] (apply merge
+                                    (map 
+                                      #(hash-map %
+                                         (hash-map :measure "Nominal")) 
+                                      (map first attribute-vector))))))}))
 
 ;;;-Selection------------------------------------------------------------------
 
+(re-frame/reg-event-fx
+ ::attribute-selection-down
+  (fn [cofx [_ attribute]]
+    (let [db    (:db cofx) 
+          index (.indexOf (get-in db [:mv-ctx :attributes]) attribute)]
+      {:dispatch [::set-tmp index]})))
+
 (re-frame/reg-event-db
- ::attribute-selection-swap
+ ::attribute-selection-up
   (fn [db [_ attribute]]
-    (let [index (.indexOf (get-in db [:mv-ctx :attributes]) attribute)]
-      (update-in db [:mv-ctx :attributes] 
-                    ;; Swap the Boolean for the received attribute in the db
-                    #(assoc-in % [index 1] (not (second attribute)))))))
+    (let [down-index (:tmp db) 
+          up-index   (.indexOf (get-in db [:mv-ctx :attributes]) attribute)
+          index-list (if (> down-index up-index)
+                         (conj (range up-index down-index) down-index)
+                         (conj (range down-index up-index) up-index))]
+      (loop [loop-db          db
+             loop-index-list  index-list]
+        (if (empty? loop-index-list)
+            loop-db
+            (recur
+              (update-in 
+                loop-db 
+                [:mv-ctx :attributes (first loop-index-list) 1]
+                not)
+              (drop 1 loop-index-list)))))))
 
 (re-frame/reg-event-fx
  ::initiate-attributes
   (fn [cofx _]
-    {:dispatch [::set-panel "scaling"]
+    {:dispatch [::set-panel "scale"]
      :db (let [db             (:db cofx)
                attribute-list (mapv 
                                 first
@@ -79,21 +103,9 @@
                                   (get-in db [:mv-ctx :attributes])))]
            (-> db
              (assoc-in [:selection :attributes] attribute-list)
-             (assoc-in [:selection :current-attribute] (first attribute-list))
-             (assoc-in [:scaling] (apply merge
-                                    (map 
-                                      #(hash-map %
-                                         (hash-map :measure "Nominal")) 
-                                      attribute-list)))))}))
-
-;;;-Export---------------------------------------------------------------------
-
-(re-frame/reg-event-db
- ::export-make-context
-  (fn [db _]
-    (let [blob (js/Blob. ["Mops"])
-          url  (js/URL.createObjectURL blob)]
-      (assoc-in db [:url] url))))
+             (assoc-in 
+               [:selection :current-attribute] 
+               (first attribute-list))))}))
 
 ;;;-Scaling--------------------------------------------------------------------
 
@@ -130,9 +142,27 @@
     (let [attribute (get-in db [:selection :current-attribute])]
       (assoc-in db [:scaling attribute :measure] measure))))
 
+;;;-Export---------------------------------------------------------------------
+
+(re-frame/reg-event-fx
+ ::export-make-context
+  (fn [cofx _]
+    {:dispatch [::set-panel "export"]
+     :db (let [db (:db cofx)
+               blob (js/Blob. [(.stringify js/JSON (clj->js db))])
+               url  (js/URL.createObjectURL blob)]
+               (assoc-in db [:url] url))}))
+
 ;;;-Panel----------------------------------------------------------------------
 
 (re-frame/reg-event-db
  ::set-panel
   (fn [db [_ panel]]
     (assoc-in db [:panel] panel)))
+
+;;;-Util-----------------------------------------------------------------------
+
+(re-frame/reg-event-db
+ ::set-tmp
+  (fn [db [_ value]]
+    (assoc-in db [:tmp] value)))
