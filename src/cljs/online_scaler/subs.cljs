@@ -14,6 +14,18 @@
   (fn [db _]
     (get-in db [:mv-ctx :file])))
 
+;;;-Import---------------------------------------------------------------------
+
+(re-frame/reg-sub
+ ::import-name
+  (fn [db _]
+    (get-in db [:db :name])))
+
+(re-frame/reg-sub
+ ::import-db
+  (fn [db _]
+    (get-in db [:db :map])))
+
 ;;;-Selection------------------------------------------------------------------
 
 (re-frame/reg-sub
@@ -36,14 +48,19 @@
 (re-frame/reg-sub
  ::attribute-measure
   (fn [db [_ attribute]]
-    (get-in db [:scaling (first attribute) :measure])))
+    (get-in db [:scaling (keyword (first attribute)) :measure])))
 
 ;;;-Export---------------------------------------------------------------------
 
 (re-frame/reg-sub
- ::url
+ ::context-url
   (fn [db _]
-    (get-in db [:url])))
+    (get-in db [:context-url])))
+
+(re-frame/reg-sub
+ ::config-url
+  (fn [db _]
+    (get-in db [:config-url])))
 
 ;;;-Panel----------------------------------------------------------------------
 

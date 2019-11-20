@@ -1,6 +1,6 @@
 (ns online-scaler.views
   (:require
-   [clojure.string :refer [capitalize]]
+   [clojure.string :refer [capitalize split]]
    [re-frame.core :as re-frame]
    [online-scaler.events :as events]
    [online-scaler.subs :as subs]))
@@ -10,7 +10,7 @@
 (defn header [current-panel]
   (let [can-select @(re-frame/subscribe [::subs/mv-ctx-attributes])
         can-scale @(re-frame/subscribe [::subs/current-attribute])
-        can-export @(re-frame/subscribe [::subs/url])]
+        can-export @(re-frame/subscribe [::subs/context-url])]
     [:div {:class "tabs is-centered"}
       [:ul
         (map
@@ -30,7 +30,7 @@
           (vector [::events/set-panel "import"]
                   [::events/set-panel "select"]
                   [::events/initiate-attributes nil]
-                  [::events/export-make-context nil]))]]))
+                  [::events/set-panel "export"]))]]))
 
 ;;;-Upload---------------------------------------------------------------------
 
@@ -77,6 +77,36 @@
 
 ;;;-Import---------------------------------------------------------------------
 
+(defn import-file []
+	[:div {:class "file has-name is-boxed is-info is-pulled-right"}
+		[:label {:class "file-label"}
+			[:input {:class "file-input" 
+               :type "file"
+               :accept ".json"
+               :on-change #(re-frame/dispatch 
+                            [::events/import-file-change 
+                              (-> % .-target .-files (aget 0))])}]
+			[:span {:class "file-cta"}
+				[:span {:class "file-icon"}
+					[:i {:class "fas fa-upload"}]]
+				[:span {:class "file-label"}
+					"Choose a file…"]]
+      [:span {:class "file-name"}
+        @(re-frame/subscribe [::subs/import-name])]]])
+
+(defn import-form []
+  (let [file (re-frame/subscribe [::subs/import-db])]
+    [:div {:class "columns"} 
+      [:div {:class "column"}
+        [import-file]]
+      [:div {:class "column"}
+        (if (not (nil? @file))
+          [:button {:type "button"
+                    :class "button is-large is-info is-pulled-left"
+                    :on-click #(re-frame/dispatch
+                               [::events/set-db nil])}
+                   "Import"])]]))
+
 (defn import-panel []
   [:div {:class "container is-fluid"}
 		[:div {:class "container box has-text-centered"}
@@ -84,7 +114,7 @@
       [upload-form]]
 		[:div {:class "container box has-text-centered"}
       [:h1 {:class "title"} "Edit previous scaling"]
-      nil]])
+      [import-form]]])
 
 ;;;-Select---------------------------------------------------------------------
 
@@ -225,25 +255,26 @@
 ;;;-Export---------------------------------------------------------------------
 
 (defn export-context []
-  (let [url (re-frame/subscribe [::subs/url])]
+  (let [url   @(re-frame/subscribe [::subs/context-url])
+        title @(re-frame/subscribe [::subs/mv-ctx-file-name])]
     [:div {:class "tile is-parent"}
       [:div {:class "container box has-text-centered"}
         [:h1 {:class "title"}
-          "Scaled Context (macht nichts)"]
-        [:a {:href @url
-             :download "scaled_ctx.ctx"}             
+          "Scaled Context"]
+        [:a {:href url
+             :download (str (first (split title #"\.")) ".ctx")}             
           [:button {:type "button"
                     :class "button is-large is-info is-fullwidth"}
               [:i {:class "fas fa-download"}]]]]]))
 
 (defn export-config []
-  (let [url (re-frame/subscribe [::subs/url])]
+  (let [url (re-frame/subscribe [::subs/config-url])]
     [:div {:class "tile is-parent"}
       [:div {:class "container box has-text-centered"}
         [:h1 {:class "title"}
-          "Import file"]
+          "Import File"]
         [:a {:href @url
-             :download "scaled_ctx.ctx"}             
+             :download "config.json"}             
           [:button {:type "button"
                     :class "button is-large is-info is-fullwidth"}
               [:i {:class "fas fa-download"}]]]]]))

@@ -3,24 +3,37 @@
 ;;;-Default-Database-----------------------------------------------------------
 
 (def default-db
-  {;; the current panel to be loaded from view
-   :panel   "import"
+  {
+   ;;;-Import------------------------------------------------------------------
+   :db {:name  [:font {:color "lightgrey"} "No file selected."]
+        :map   nil ;db to replace current one on button press
+        }
+
+   ;;;-Upload/Selection--------------------------------------------------------
    :mv-ctx  {:name        [:font {:color "lightgrey"} "No file selected."]
-             ;; csv file split up by lines and commas
-             :file        nil
-             :header      false
-             ;; [["att#1" true] ["att#2" false]]; only scale true
-             :attributes  nil}
-   ;; the url to the scaled context for the download button
-   :url     nil
-   :selection {;; the selected element for the "Scaling" view
-               :current-attribute     nil
-               ;; vector with selected attributes
-               :attributes            nil}
-   ;; map of maps with scaling data for each attribute
-   :scaling nil
-     ;; example map
-     ;{attribute {:measure  "nominal"}}
-   ;; holds all kinds of temporary values e.g. between mouse-down and mouse-up
-   :tmp     nil
+             :file        nil ;nested list for .csv lines
+             :header      false ;does .csv include attribute names?
+             :attributes  nil ;list of pairs [attribute, scale?]
+             }
+
+   ;;;-Scaling-----------------------------------------------------------------
+   :selection {:current-attribute     nil ;what to load in scaling view
+               :attributes            nil ;ordered list for next/prev button
+               }
+   :scaling   nil ;initialized with map of maps
+              ;;example element
+              ;;:attribute-name {:measure "nominal"}
+
+   ;;;-Export------------------------------------------------------------------
+   :context-url  nil ;downloadlink
+   :config-url   nil ;downloadlink
+   :scaled-ctx   nil ;ctx described by :scaling
+                 ;; example context
+                 ;; {:objects    ["obj1" "obj2"]
+                 ;;  :attributes ["att1" "att2"]
+                 ;;  :incidence  [[true false][false false]]}
+
+   ;;;-Panel/Util--------------------------------------------------------------
+   :panel   "import" ;current view
+   :tmp     nil ;helper between mouse-down/mouse-up events
    })

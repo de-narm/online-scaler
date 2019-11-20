@@ -3,6 +3,7 @@
    [cljs.reader :refer [read-string]]
    [clojure.string :refer [split]]
    [re-frame.core :as re-frame]
+   [online-scaler.scaling :as scale]
    [online-scaler.db :as db]))
 
 ;;;-Init-----------------------------------------------------------------------
@@ -22,7 +23,7 @@
                                       (split result #"\n")))))
 
 (re-frame/reg-fx
-  :read
+  :read-mv-ctx
   (fn [file]
     (let [reader (js/FileReader.)]
       (set! (.-onload reader) 
@@ -32,7 +33,7 @@
 (re-frame/reg-event-fx 
  ::mv-ctx-file-change
   (fn [cofx [_ file]]
-    {:read file
+    {:read-mv-ctx file
      :db (assoc-in (:db cofx) [:mv-ctx :name] (.-name file))}))
 
 (re-frame/reg-event-db
@@ -59,9 +60,43 @@
             (assoc-in [:mv-ctx :attributes] attribute-vector)
             (assoc-in [:scaling] (apply merge
                                     (map 
-                                      #(hash-map %
+                                      #(hash-map 
+                                         (keyword %)
                                          (hash-map :measure "Nominal")) 
                                       (map first attribute-vector))))))}))
+
+;;;-Import---------------------------------------------------------------------
+
+(re-frame/reg-event-db
+ ::set-import-db
+  (fn [db [_ new-db]]
+    (assoc-in db [:db :map] new-db)))
+
+(re-frame/reg-fx
+ :read-import
+  (fn [file]
+    (let [reader (js/FileReader.)]
+      (set! (.-onload reader) 
+            #(re-frame/dispatch [::set-import-db (js->clj
+                                                   (->> % 
+                                                        .-target 
+                                                        .-result
+                                                        (.parse js/JSON))
+                                                   :keywordize-keys true)]))
+      (.readAsText reader file))))
+
+(re-frame/reg-event-fx 
+ ::import-file-change
+  (fn [cofx [_ file]]
+    {:read-import file
+     :db (assoc-in (:db cofx) [:db :name] (.-name file))}))
+
+(re-frame/reg-event-db
+ ::set-db 
+  (fn [db _]
+    (if (nil? (get-in db [:db :map]))
+      db
+      (get-in db [:db :map]))))
 
 ;;;-Selection------------------------------------------------------------------
 
@@ -80,7 +115,7 @@
           index-list (if (> down-index up-index)
                          (conj (range up-index down-index) down-index)
                          (conj (range down-index up-index) up-index))]
-      (loop [loop-db          db
+      (loop [loop-db          (assoc-in db [:tmp] nil)
              loop-index-list  index-list]
         (if (empty? loop-index-list)
             loop-db
@@ -140,7 +175,7 @@
  ::change-measure
   (fn [db [_ measure]]
     (let [attribute (get-in db [:selection :current-attribute])]
-      (assoc-in db [:scaling attribute :measure] measure))))
+      (assoc-in db [:scaling (keyword attribute) :measure] measure))))
 
 ;;;-Export---------------------------------------------------------------------
 
@@ -149,9 +184,13 @@
   (fn [cofx _]
     {:dispatch [::set-panel "export"]
      :db (let [db (:db cofx)
-               blob (js/Blob. [(.stringify js/JSON (clj->js db))])
-               url  (js/URL.createObjectURL blob)]
-               (assoc-in db [:url] url))}))
+               context-blob (js/Blob. [(scale/write db)])
+               config-blob  (js/Blob. [(.stringify js/JSON (clj->js db))])
+               context-url  (js/URL.createObjectURL context-blob)
+               config-url   (js/URL.createObjectURL config-blob)]
+           (-> db
+             (assoc-in [:context-url] context-url)
+             (assoc-in [:config-url]  config-url)))}))
 
 ;;;-Panel----------------------------------------------------------------------
 
