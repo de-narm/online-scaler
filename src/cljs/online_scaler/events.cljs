@@ -24,11 +24,11 @@
 
 (re-frame/reg-fx
   :read-mv-ctx
-  (fn [file]
-    (let [reader (js/FileReader.)]
-      (set! (.-onload reader) 
-            #(re-frame/dispatch [::set-mv-ctx (-> % .-target .-result)]))
-      (.readAsText reader file))))
+   (fn [file]
+     (let [reader (js/FileReader.)]
+       (set! (.-onload reader) 
+             #(re-frame/dispatch [::set-mv-ctx (-> % .-target .-result)]))
+       (.readAsText reader file))))
 
 (re-frame/reg-event-fx 
  ::mv-ctx-file-change
@@ -46,17 +46,21 @@
   (fn [cofx _]
     {:dispatch [::set-panel "select"]
      :db  (let [db                (:db cofx)
-                first-line        (first (get-in db [:mv-ctx :file]))
-                attribute-vector  (if (get-in db [:mv-ctx :header])
+                header            (get-in db [:mv-ctx :header])
+                mv-ctx            (get-in db [:mv-ctx :file])
+                first-line        (first mv-ctx)
+                attribute-vector  (if header
                                       ;; either use given names
                                       (mapv 
-                                        #(vector % true) 
+                                        #(vector (str %) true) 
                                         first-line)
                                       ;; or generate generic ones
                                       (mapv
                                         #(vector (str "Attribute#" %) true)
-                                        (range (count first-line))))]
+                                        (range (count first-line))))
+                new-mv-ctx        (if header (drop 1 mv-ctx) mv-ctx)]
           (-> db
+            (assoc-in [:mv-ctx :file] new-mv-ctx)
             (assoc-in [:mv-ctx :attributes] attribute-vector)
             (assoc-in [:scaling] (apply merge
                                     (map 
@@ -179,18 +183,41 @@
 
 ;;;-Export---------------------------------------------------------------------
 
+(re-frame/reg-event-db
+ ::remove-export-warning
+  (fn [db _]
+    (assoc-in db [:warning] false)))
+
 (re-frame/reg-event-fx
- ::export-make-context
+ ::make-context
+  (fn [cofx _]
+    {:dispatch [::remove-export-warning nil]
+     :db
+       (let [db           (:db cofx)
+             context-blob (js/Blob. [(scale/write db)])
+             context-url  (js/URL.createObjectURL context-blob)]
+         (assoc-in db [:context-url]  context-url))}))
+
+(re-frame/reg-event-fx
+ ::make-config
+  (fn [cofx _]
+    {:dispatch [::remove-export-warning nil]
+     :db
+       (let [;; remove urls since the files are not included
+             db           (:db cofx)
+             new-db       (-> db
+                            (assoc-in [:warning]     false)
+                            (assoc-in [:context-url] nil)
+                            (assoc-in [:config-url]  nil))
+             config-blob  (js/Blob. [(.stringify js/JSON (clj->js new-db))])
+             config-url   (js/URL.createObjectURL config-blob)]
+         (assoc-in db [:config-url]  config-url))}))
+
+(re-frame/reg-event-fx
+ ::set-export-warning
   (fn [cofx _]
     {:dispatch [::set-panel "export"]
-     :db (let [db (:db cofx)
-               context-blob (js/Blob. [(scale/write db)])
-               config-blob  (js/Blob. [(.stringify js/JSON (clj->js db))])
-               context-url  (js/URL.createObjectURL context-blob)
-               config-url   (js/URL.createObjectURL config-blob)]
-           (-> db
-             (assoc-in [:context-url] context-url)
-             (assoc-in [:config-url]  config-url)))}))
+     :db       (assoc-in (:db cofx) [:warning] true)}))
 
 ;;;-Panel----------------------------------------------------------------------
 

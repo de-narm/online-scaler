@@ -25,6 +25,7 @@
               ;;:attribute-name {:measure "nominal"}
 
    ;;;-Export------------------------------------------------------------------
+   :warning      false
    :context-url  nil ;downloadlink
    :config-url   nil ;downloadlink
    :scaled-ctx   nil ;ctx described by :scaling

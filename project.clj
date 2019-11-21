@@ -6,20 +6,13 @@
                  [thheller/shadow-cljs "2.8.67"]
                  [reagent "0.8.1"]
                  [re-frame "0.10.9"]]
-
   :plugins [[lein-shell "0.5.0"]]
-
   :min-lein-version "2.5.3"
-
   :source-paths ["src/clj" "src/cljs"]
-
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
-
-
   :shell {:commands {"open" {:windows ["cmd" "/c" "start"]
                              :macosx  "open"
                              :linux   "xdg-open"}}}
-
   :aliases {"dev"           ["with-profile" "dev" "do"
                             ["clean"]
                             ["run" "-m" "shadow.cljs.devtools.cli" "watch" 
@@ -40,6 +33,5 @@
                              "karma-test"]
                             ["shell" "karma" "start" "--single-run" 
                              "--reporters" "junit,dots"]]}
-
   :profiles {:dev  {:dependencies [[binaryage/devtools "0.9.10"]]}
              :prod {}})

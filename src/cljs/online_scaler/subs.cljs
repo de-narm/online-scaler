@@ -14,6 +14,11 @@
   (fn [db _]
     (get-in db [:mv-ctx :file])))
 
+(re-frame/reg-sub
+ ::checkbox
+  (fn [db _]
+    (get-in db [:mv-ctx :header])))
+
 ;;;-Import---------------------------------------------------------------------
 
 (re-frame/reg-sub
@@ -61,6 +66,11 @@
  ::config-url
   (fn [db _]
     (get-in db [:config-url])))
+
+(re-frame/reg-sub
+ ::warning
+  (fn [db _]
+    (get-in db [:warning])))
 
 ;;;-Panel----------------------------------------------------------------------
 

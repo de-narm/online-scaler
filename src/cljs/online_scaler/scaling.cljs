@@ -1,22 +1,36 @@
-(ns online-scaler.scaling)
+(ns online-scaler.scaling
+  (:require [clojure.string :as string]))
 
 ;;;-Nominal-Scale--------------------------------------------------------------
 
+(defn build-base
+  "Given all distinct values builds a map with their corresponding incidence."
+  [values]
+  (let [value-count (count values)
+        ;; quadratic diagonal matrix with n = value-count
+        incidence   (map
+                      (fn [row position] (assoc row position "X"))
+                      (repeat value-count (vec (repeat value-count ".")))
+                      (range value-count))]
+    ;; build map with {:value incidence-row}
+    (apply merge
+      (map
+        (fn [value row] (hash-map value row))
+        values
+        incidence))))
+
 (defn scale-nominal
-  "Get all Elements and use them as new attributes."
+  "Given all values of a colum scales them nominal."
   [values attribute db]
-  (let [header      (get-in db [:mv-ctx :header])
-        mv-ctx          (get-in db [:mv-ctx :file])
-        new-attributes  (distinct values)
-        empty-incidence (repeat 
-                          (if header (count (drop 1 mv-ctx)) (count mv-ctx))
-                          (vec (repeat (count new-attributes) ".")))]
-    {:attributes (map #(str (first attribute) "|" %) new-attributes)
-     :incidence  (map
-                   (fn [a b]
-                     (assoc a (.indexOf new-attributes b) "X")) 
-                   empty-incidence
-                   values)}))
+  (let [new-attributes  (distinct values)
+        base-map        (build-base new-attributes)]
+    ;; build ((attributes)((incidence)))
+    (list (map #(str (first attribute) "|" %) new-attributes)
+          ;; get the incidence row for each value
+          (list
+            (map
+              #(get base-map %)
+              values)))))
 
 ;;;-Scaling--------------------------------------------------------------------
 
@@ -32,32 +46,31 @@
   [db]
   (let [;; attributes which will be scaled
         attributes (get-in db [:mv-ctx :attributes])
-        header     (get-in db [:mv-ctx :header])
         mv-ctx     (get-in db [:mv-ctx :file])] 
     (map 
+      ;; scale each attribute with its entry in db->scaling
       (fn [values attribute]
         (if (second attribute)
           (apply-measure values attribute db)
           nil))
-      ;; [[1 1][2 2]] -> [[1 2][1 2]]
-      (apply map list (if header (drop 1 mv-ctx) mv-ctx))
+      ;; transpose [[1 1][2 2]] -> [[1 2][1 2]]
+      (apply map list mv-ctx)
       attributes)))
 
 (defn write 
   "Converts the scaled context into burmeister format."
   [db]
-  (let [contexts   (scale db)
-        objects    (range 
-                     (if (get-in db [:mv-ctx :header])
-                       (- (count (get-in db [:mv-ctx :file])) 1)
-                       (count (get-in db [:mv-ctx :file]))))
-        attributes (apply concat (map :attributes contexts))
-        incidence  (apply map concat (filter some? (map :incidence contexts)))]
-    (str "B\n"
-         "\n"
-         (count objects) "\n"
-         (count attributes) "\n"
-         "\n"
-         (apply str (map #(str % "\n") objects)) 
-         (apply str (map #(str % "\n") attributes)) 
-         (apply str (map #(str (apply str %) "\n") incidence)))))
+  (let [;; combine list of ((atts)((inc))) into one ((atts)(incs))
+        context   (apply map concat (filter some? (scale db)))
+        attributes (first context)
+        ;; combine the incidence lists
+        incidence  (apply map concat (second context))
+        objects    (range (count incidence))]
+    (str \B \newline
+         \newline
+         (count objects) \newline
+         (count attributes) \newline
+         \newline
+         (string/join \newline objects) \newline
+         (string/join \newline attributes) \newline
+         (string/join \newline (map #(apply str %) incidence)))))

@@ -9,8 +9,7 @@
 
 (defn header [current-panel]
   (let [can-select @(re-frame/subscribe [::subs/mv-ctx-attributes])
-        can-scale @(re-frame/subscribe [::subs/current-attribute])
-        can-export @(re-frame/subscribe [::subs/context-url])]
+        can-scale @(re-frame/subscribe [::subs/current-attribute])]
     [:div {:class "tabs is-centered"}
       [:ul
         (map
@@ -26,11 +25,11 @@
           (vector "import" 
                   (if (not (nil? can-select)) "select")
                   (if (not (nil? can-scale)) "scale")
-                  (if (not (nil? can-export)) "export"))
+                  (if (not (nil? can-scale)) "export"))
           (vector [::events/set-panel "import"]
                   [::events/set-panel "select"]
                   [::events/initiate-attributes nil]
-                  [::events/set-panel "export"]))]]))
+                  [::events/set-export-warning nil]))]]))
 
 ;;;-Upload---------------------------------------------------------------------
 
@@ -54,6 +53,7 @@
 (defn upload-checkbox []
 	[:label {:class "checkbox is-pulled-left"}
 		[:input {:type "checkbox"
+             :checked @(re-frame/subscribe [::subs/checkbox])
              :on-change #(re-frame/dispatch
                           [::events/mv-ctx-header-change
                             (-> % .-target .-checked)])}]
@@ -73,7 +73,7 @@
                     :class "button is-large is-info is-pulled-left"
                     :on-click #(re-frame/dispatch
                                [::events/initiate-selection nil])}
-                   "Select"])]]))
+                   "Upload"])]]))
 
 ;;;-Import---------------------------------------------------------------------
 
@@ -110,10 +110,10 @@
 (defn import-panel []
   [:div {:class "container is-fluid"}
 		[:div {:class "container box has-text-centered"}
-      [:h1 {:class "title"} "Upload new context"]
+      [:h1 {:class "title"} "Upload Many Valued Context"]
       [upload-form]]
 		[:div {:class "container box has-text-centered"}
-      [:h1 {:class "title"} "Edit previous scaling"]
+      [:h1 {:class "title"} "Import Config File"]
       [import-form]]])
 
 ;;;-Select---------------------------------------------------------------------
@@ -137,10 +137,10 @@
            :style {:height "450px"}}
       [:h1 {:class "content title"}
         "Attributes to scale"]
-      [:div {:class "table-container is-unselectable"
+      [:div {:class "table-container is-unselectable box is-paddingless"
              :style {:height      "350px"
                      :overflow    "auto"}} 
-        [:table {:class "table is-fullwidth is-hoverable"}
+        [:table {:class "table is-fullwidth is-hoverable is-bordered"}
           [:tbody
             (map select-single-attribute @attributes)]]]]))
 
@@ -155,7 +155,7 @@
                   :class "button is-large is-info"
                   :on-click #(re-frame/dispatch
                              [::events/initiate-attributes nil])}
-                 "Scale"]]]]])
+                 "Select"]]]]])
 
 ;;;-Scale-Attribute-Selection--------------------------------------------------
 
@@ -163,7 +163,7 @@
   [:div {:class "tile is-child box has-text-centered"}
       [:button {:class "button is-medium is-info"
                 :on-click #(re-frame/dispatch
-                            [::events/export-make-context nil])}
+                            [::events/set-panel "export"])}
                 "Export"]])
 
 (defn scale-previous-attribute-button [current-attribute]
@@ -184,12 +184,12 @@
 
 (defn scale-drop-down-selection [current-attribute]
   (let [attribute-list (re-frame/subscribe [::subs/attribute-list])]
-  [:div {:class "select"
-         :on-change #(re-frame/dispatch
-                      [::events/set-current-attribute 
-                        (-> % .-target .-value)])}
-    [:select
-      (map #(vector :option {:key %}  %) @attribute-list)]]))
+  [:div {:class "select"}
+    [:select {:value current-attribute
+              :on-change #(re-frame/dispatch
+                           [::events/set-current-attribute 
+                             (-> % .-target .-value)])}
+      (map #(vector :option {:key % }  %) @attribute-list)]]))
 
 (defn scale-attribute-selection [current-attribute]
   [:div {:class "tile is-child box"}
@@ -254,36 +254,62 @@
 
 ;;;-Export---------------------------------------------------------------------
 
-(defn export-context []
-  (let [url   @(re-frame/subscribe [::subs/context-url])
-        title @(re-frame/subscribe [::subs/mv-ctx-file-name])]
+(defn export-warning []
+  [:div {:class "tile is-parent is-fullwidth"}
+    [:div {:class "container box"}
+      [:h1 {:class "title"} "Caution!"]
+      [:p "The Download-Buttons still link to previously generated files,"
+          " generate them again to include possible changes."]]])
+
+(defn export-context [url]
+  (let [title @(re-frame/subscribe [::subs/mv-ctx-file-name])]
     [:div {:class "tile is-parent"}
       [:div {:class "container box has-text-centered"}
         [:h1 {:class "title"}
           "Scaled Context"]
+        [:button {:class "button is-large is-info is-fullwidth"
+                  :on-click #(re-frame/dispatch [::events/make-context nil])}
+          "Generate"]
+        [:br]
         [:a {:href url
              :download (str (first (split title #"\.")) ".ctx")}             
-          [:button {:type "button"
-                    :class "button is-large is-info is-fullwidth"}
-              [:i {:class "fas fa-download"}]]]]]))
+          [:button (merge
+                     {:type "button"}
+                     (if url
+                       {:class "button is-large is-info is-fullwidth"}
+                       {:class "button is-large is-info is-fullwidth"
+                        :disabled true}))
+              [:i {:class "fas fa-download"}] "Download"]]]]))
 
-(defn export-config []
-  (let [url (re-frame/subscribe [::subs/config-url])]
-    [:div {:class "tile is-parent"}
-      [:div {:class "container box has-text-centered"}
-        [:h1 {:class "title"}
-          "Import File"]
-        [:a {:href @url
-             :download "config.json"}             
-          [:button {:type "button"
-                    :class "button is-large is-info is-fullwidth"}
-              [:i {:class "fas fa-download"}]]]]]))
+(defn export-config [url]
+  [:div {:class "tile is-parent"}
+    [:div {:class "container box has-text-centered"}
+      [:h1 {:class "title"}
+        "Import File"]
+      [:button {:class "button is-large is-info is-fullwidth"
+                :on-click #(re-frame/dispatch [::events/make-config nil])}
+        "Generate"]
+      [:br]
+      [:a {:href url
+           :download "config.json"}             
+        [:button (merge
+                   {:type "button"}
+                   (if url
+                     {:class "button is-large is-info is-fullwidth"}
+                     {:class "button is-large is-info is-fullwidth"
+                      :disabled true}))
+            [:i {:class "fas fa-download"}] "Download"]]]])
 
 (defn export-panel []
-  [:div {:class "container is-fluid"}
-    [:div {:class "tile is-ancestor"}
-      [export-context] 
-      [export-config]]])
+  (let [warning       @(re-frame/subscribe [::subs/warning])
+        context-url   @(re-frame/subscribe [::subs/context-url])
+        config-url    @(re-frame/subscribe [::subs/config-url])]
+    [:div {:class "container is-fluid"}
+      [:div {:class "tile is-ancestor is-vertical"}
+        (if (and warning (or context-url config-url)) [export-warning])
+        [:div {:class "tile"}
+          [export-context context-url] 
+          [export-config config-url]]]]))
 
 ;;;-Main-----------------------------------------------------------------------
 
