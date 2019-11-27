@@ -58,7 +58,9 @@
                                       (mapv
                                         #(vector (str "Attribute#" %) true)
                                         (range (count first-line))))
-                new-mv-ctx        (if header (drop 1 mv-ctx) mv-ctx)]
+                ;; transpose [[1 1][2 2]] -> [[1 2][1 2]]
+                new-mv-ctx        (apply map list
+                                    (if header (drop 1 mv-ctx) mv-ctx))]
           (-> db
             (assoc-in [:mv-ctx :file] new-mv-ctx)
             (assoc-in [:mv-ctx :attributes] attribute-vector)
@@ -66,7 +68,7 @@
                                     (map 
                                       #(hash-map 
                                          (keyword %)
-                                         (hash-map :measure "Nominal")) 
+                                         (hash-map :measure "nominal")) 
                                       (map first attribute-vector))))))}))
 
 ;;;-Import---------------------------------------------------------------------
@@ -119,10 +121,12 @@
           index-list (if (> down-index up-index)
                          (conj (range up-index down-index) down-index)
                          (conj (range down-index up-index) up-index))]
+      ;; go through all indices and swap if they are selected
       (loop [loop-db          (assoc-in db [:tmp] nil)
              loop-index-list  index-list]
         (if (empty? loop-index-list)
-            loop-db
+            ;; empty the tmp value
+            (assoc-in loop-db [:tmp] nil)
             (recur
               (update-in 
                 loop-db 
@@ -206,9 +210,10 @@
        (let [;; remove urls since the files are not included
              db           (:db cofx)
              new-db       (-> db
-                            (assoc-in [:warning]     false)
+                            (assoc-in [:warning] false)
+                            (assoc-in [:panel] "select")
                             (assoc-in [:context-url] nil)
-                            (assoc-in [:config-url]  nil))
+                            (assoc-in [:config-url] nil))
              config-blob  (js/Blob. [(.stringify js/JSON (clj->js new-db))])
              config-url   (js/URL.createObjectURL config-blob)]
          (assoc-in db [:config-url]  config-url))}))

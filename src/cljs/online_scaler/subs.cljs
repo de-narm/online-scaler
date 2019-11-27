@@ -53,7 +53,7 @@
 (re-frame/reg-sub
  ::attribute-measure
   (fn [db [_ attribute]]
-    (get-in db [:scaling (keyword (first attribute)) :measure])))
+    (get-in db [:scaling (keyword attribute) :measure])))
 
 ;;;-Export---------------------------------------------------------------------
 

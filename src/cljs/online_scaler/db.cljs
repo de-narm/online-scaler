@@ -21,18 +21,18 @@
                :attributes            nil ;ordered list for next/prev button
                }
    :scaling   nil ;initialized with map of maps
-              ;;example element
-              ;;:attribute-name {:measure "nominal"}
+              ;; example element
+              ;; {:attribute-name  {:measure "nominal"
+              ;;                    :values  [vals]}
+              ;;  :other-attribute {:measure "ordinal"
+              ;;                    :values  [vals]
+              ;;                    :direct  false
+              ;;                    :scale   [[objs][atts][inc]]}}
 
    ;;;-Export------------------------------------------------------------------
    :warning      false
    :context-url  nil ;downloadlink
    :config-url   nil ;downloadlink
-   :scaled-ctx   nil ;ctx described by :scaling
-                 ;; example context
-                 ;; {:objects    ["obj1" "obj2"]
-                 ;;  :attributes ["att1" "att2"]
-                 ;;  :incidence  [[true false][false false]]}
 
    ;;;-Panel/Util--------------------------------------------------------------
    :panel   "import" ;current view

@@ -59,31 +59,61 @@
 \end{itemize}
 
 \subsection{Statistics}
+\begin{figure}[H]
+	\includegraphics[width=\linewidth]{stat.png}
+	\caption{Statistics panel}
+	\label{fig:s1}
+\end{figure}
 \begin{itemize}
-	\item Based on data type mean, median, most common element etc.
+	\item Based on data type and measure: mean, median, list of all values , most common element etc.
 	\item Distribution graphs
 \end{itemize}
 
+\newpage
 \subsection{Settings}
 \begin{itemize}
 	\item Nominal
-	\item Ordinal
 		\begin{itemize}
-			\item Sort Attributes
+		\item Entirely automatic
+		\end{itemize}	    
+	\item Ordinal
+		\begin{figure}[H]
+			\includegraphics[width=\linewidth]{ord-2.png}
+			\caption{Drag and Drop Version}
+			\label{fig:o1}
+		\end{figure}
+		\begin{itemize}
+			\item Sort values with drag and drop
 			\item Different incomparable groups
-			\item Option to edit scale context
+			\item Different types of order
+			\item All unused values are scaled nominally 
+		\end{itemize}
+		\begin{figure}[H]
+			\includegraphics[width=\linewidth]{ord-1.png}
+			\caption{Custom context}
+			\label{fig:o2}
+		\end{figure}
+		\begin{itemize}
+			\item Option to edit scale context directly
+			\item Add and remove rows
 		\end{itemize}
 	\item Numeric
+		\begin{figure}[H]
+			\includegraphics[width=\linewidth]{num.png}
+			\caption{Custom context}
+			\label{fig:n1}
+		\end{figure}
 	    \begin{itemize}
-	    	\item Predefined intervals
+	    	\item Use predefined intervals with custom amount
 	    	\item Set custom intervals
 	    \end{itemize}
 \end{itemize}
 
 \subsection{Export}
 	\begin{itemize}
-		\item Last "attribute"
-		\item Only download button for .json config-file and .ctx scaled context file
+		\item Apply scales to mv-context and download it
+		\item Context in Burmeister format
+		\item Option to download .json config file to edit the scaling later
 	\end{itemize}
 
 \end{document}

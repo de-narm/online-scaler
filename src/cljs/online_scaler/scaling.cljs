@@ -38,7 +38,7 @@
   "Selects the appropriate function for the given attribute."
   [values attribute db]
   (case (get-in db [:scaling (keyword attribute) :measure])
-    "Nominal" (scale-nominal values attribute db)
+    "nominal" (scale-nominal values attribute db)
     (scale-nominal values attribute db)))
 
 (defn scale 
@@ -53,8 +53,7 @@
         (if (second attribute)
           (apply-measure values attribute db)
           nil))
-      ;; transpose [[1 1][2 2]] -> [[1 2][1 2]]
-      (apply map list mv-ctx)
+      mv-ctx
       attributes)))
 
 (defn write 

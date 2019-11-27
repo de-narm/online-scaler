@@ -119,17 +119,22 @@
 ;;;-Select---------------------------------------------------------------------
 
 (defn select-single-attribute [attribute]
-  [:tr (merge
-          (if 
-            (second attribute)
-            {:class "is-selected"}
-            {})
-          {:on-mouse-down #(re-frame/dispatch 
-                            [::events/attribute-selection-down attribute])
-           :on-mouse-up   #(re-frame/dispatch 
-                            [::events/attribute-selection-up attribute])
-           :key attribute})
-    [:td (first attribute)]])
+  (let [mouse-pressed @(re-frame/subscribe [::subs/get-tmp])]
+    [:tr (merge
+            (if 
+              (second attribute)
+              {:class "is-selected"}
+              {})
+            (if 
+              mouse-pressed
+              {:style {:cursor "pointer"}}
+              {})
+            {:on-mouse-down #(re-frame/dispatch 
+                              [::events/attribute-selection-down attribute])
+             :on-mouse-up   #(re-frame/dispatch 
+                              [::events/attribute-selection-up attribute])
+             :key attribute})
+      [:td (first attribute)]]))
 
 (defn select-attributes []
   (let [attributes (re-frame/subscribe [::subs/mv-ctx-attributes])]
@@ -142,7 +147,7 @@
                      :overflow    "auto"}} 
         [:table {:class "table is-fullwidth is-hoverable is-bordered"}
           [:tbody
-            (map select-single-attribute @attributes)]]]]))
+            (doall (map select-single-attribute @attributes))]]]]))
 
 (defn select-panel []
   [:div {:class "container is-fluid"}
@@ -184,12 +189,12 @@
 
 (defn scale-drop-down-selection [current-attribute]
   (let [attribute-list (re-frame/subscribe [::subs/attribute-list])]
-  [:div {:class "select"}
-    [:select {:value current-attribute
-              :on-change #(re-frame/dispatch
-                           [::events/set-current-attribute 
-                             (-> % .-target .-value)])}
-      (map #(vector :option {:key % }  %) @attribute-list)]]))
+    [:div {:class "select"}
+      [:select {:value current-attribute
+                :on-change #(re-frame/dispatch
+                             [::events/set-current-attribute 
+                               (-> % .-target .-value)])}
+        (map #(vector :option {:key % }  %) @attribute-list)]]))
 
 (defn scale-attribute-selection [current-attribute]
   [:div {:class "tile is-child box"}
@@ -210,6 +215,30 @@
     [:div {:class "tile is-parent"}
       [scale-attribute-selection current-attribute]]])
 
+;;;-Scale-Statistics-----------------------------------------------------------
+
+(defn statistics-box [attribute]
+  (let [measure (re-frame/subscribe [::subs/attribute-measure attribute])]
+    [:div {:class "box"}
+      [:h5 {:class "title is-5"} "Statistics"]]))
+
+;;;-Scale-Ordinal--------------------------------------------------------------
+
+(defn ordinal-scale [current-attribute]
+  [:div {:class "table-container"}
+    [:table {:class "table"}]])
+
+;;;-Scale-Scaling--------------------------------------------------------------
+
+(defn scaling-box [current-attribute]
+  (let [measure (re-frame/subscribe 
+                  [::subs/attribute-measure current-attribute])]
+    [:div {:class "box"}
+      [:h5 {:class "title is-5"} "Scaling"]
+      (case @measure
+        "ordinal"   [ordinal-scale current-attribute]
+        nil)]))
+
 ;;;-Scale-Header---------------------------------------------------------------
 
 (defn scale-measurement-radio [current-attribute]
@@ -229,15 +258,15 @@
                       {:on-click (fn [_] (re-frame/dispatch
                                            [::events/change-measure %]))
                        :key %})
-                  [:td %])
-              ["Nominal" "Ordinal" "Numeric"]))]]]))
+                  [:td (capitalize %)])
+              ["nominal" "ordinal" "numeric"]))]]]))
 
 (defn scale-measurement-selection-box [current-attribute]
   [:div {:class "tile is-parent"}
     [:div {:class "tile is-child box"}
       [:h1 {:class "title"}
         current-attribute]
-      [scale-measurement-radio [current-attribute]]]])
+      [scale-measurement-radio current-attribute]]])
 
 (defn scale-header [current-attribute]
   [:div {:class "tile is-ancestor"}
@@ -247,10 +276,14 @@
       [scale-attribute-selection-box current-attribute]]])
 
 (defn scale-panel []
-  (let [current-attribute (re-frame/subscribe [::subs/current-attribute])]
+  (let [current-attribute @(re-frame/subscribe [::subs/current-attribute])]
+    ;; if there's no current attribute, got back to the select panel
+    (if (nil? current-attribute) 
+        (re-frame/dispatch [::events/set-panel "select"]))
     [:div {:class "container is-fluid"} 
-      [scale-header @current-attribute]
-      [:div {:class "box"} "statistics etc" [:br]]]))
+      [scale-header current-attribute]
+      [statistics-box current-attribute]
+      [scaling-box current-attribute]]))
 
 ;;;-Export---------------------------------------------------------------------
 
@@ -262,7 +295,7 @@
           " generate them again to include possible changes."]]])
 
 (defn export-context [url]
-  (let [title @(re-frame/subscribe [::subs/mv-ctx-file-name])]
+  (let [title (re-frame/subscribe [::subs/mv-ctx-file-name])]
     [:div {:class "tile is-parent"}
       [:div {:class "container box has-text-centered"}
         [:h1 {:class "title"}
@@ -272,7 +305,7 @@
           "Generate"]
         [:br]
         [:a {:href url
-             :download (str (first (split title #"\.")) ".ctx")}             
+             :download (str (first (split @title #"\.")) ".ctx")}             
           [:button (merge
                      {:type "button"}
                      (if url
@@ -301,15 +334,15 @@
             [:i {:class "fas fa-download"}] "Download"]]]])
 
 (defn export-panel []
-  (let [warning       @(re-frame/subscribe [::subs/warning])
-        context-url   @(re-frame/subscribe [::subs/context-url])
-        config-url    @(re-frame/subscribe [::subs/config-url])]
+  (let [warning       (re-frame/subscribe [::subs/warning])
+        context-url   (re-frame/subscribe [::subs/context-url])
+        config-url    (re-frame/subscribe [::subs/config-url])]
     [:div {:class "container is-fluid"}
       [:div {:class "tile is-ancestor is-vertical"}
-        (if (and warning (or context-url config-url)) [export-warning])
+        (if (and @warning (or context-url config-url)) [export-warning])
         [:div {:class "tile"}
-          [export-context context-url] 
-          [export-config config-url]]]]))
+          [export-context @context-url] 
+          [export-config @config-url]]]]))
 
 ;;;-Main-----------------------------------------------------------------------
 
