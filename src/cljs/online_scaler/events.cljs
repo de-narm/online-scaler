@@ -156,6 +156,27 @@
                [:selection :current-attribute] 
                (first attribute-list))))}))
 
+;;;-Ordinal-Scaling------------------------------------------------------------
+
+(re-frame/reg-event-db
+ ::add-new-attribute
+  (fn [db [_ attribute]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in 
+        db 
+        [:scaling (keyword current-attribute) :attributes] 
+        #(if (some #{attribute} %) % (conj % attribute))))))
+
+(re-frame/reg-event-db
+ ::swap-incidence
+  (fn [db [_ [attribute object]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in 
+        db
+        [:scaling (keyword current-attribute) 
+         :incidence (keyword attribute) (keyword object)]
+        #(if (nil? %) true (not %))))))
+
 ;;;-Scaling--------------------------------------------------------------------
 
 (re-frame/reg-event-db
@@ -194,35 +215,28 @@
 ;;;-Export---------------------------------------------------------------------
 
 (re-frame/reg-event-db
- ::remove-export-warning
-  (fn [db _]
-    (assoc-in db [:warning] false)))
-
-(re-frame/reg-event-fx
  ::make-context
-  (fn [cofx _]
-    {:dispatch [::remove-export-warning nil]
-     :db
-       (let [db           (:db cofx)
-             context-blob (js/Blob. [(scale/write db)])
-             context-url  (js/URL.createObjectURL context-blob)]
-         (assoc-in db [:context-url]  context-url))}))
+  (fn [db _]
+    (let [context-blob (js/Blob. [(scale/write db)])
+          context-url  (js/URL.createObjectURL context-blob)]
+      (-> db
+        (assoc-in [:warning] false)
+        (assoc-in [:context-url]  context-url)))))
 
-(re-frame/reg-event-fx
+(re-frame/reg-event-db
  ::make-config
-  (fn [cofx _]
-    {:dispatch [::remove-export-warning nil]
-     :db
-       (let [;; remove urls from db since the files are not included
-             db           (:db cofx)
-             new-db       (-> db
-                            (assoc-in [:warning] false)
-                            (assoc-in [:panel] "select")
-                            (assoc-in [:context-url] nil)
-                            (assoc-in [:config-url] nil))
-             config-blob  (js/Blob. [(.stringify js/JSON (clj->js new-db))])
-             config-url   (js/URL.createObjectURL config-blob)]
-         (assoc-in db [:config-url]  config-url))}))
+  (fn [db _]
+    (let [;; remove urls from db since the files are not included
+          new-db       (-> db
+                         (assoc-in [:warning] false)
+                         (assoc-in [:panel] "select")
+                         (assoc-in [:context-url] nil)
+                         (assoc-in [:config-url] nil))
+          config-blob  (js/Blob. [(.stringify js/JSON (clj->js new-db))])
+          config-url   (js/URL.createObjectURL config-blob)]
+      (-> db
+        (assoc-in [:warning] false)
+        (assoc-in [:config-url]  config-url)))))
 
 (re-frame/reg-event-fx
  ::set-export-warning

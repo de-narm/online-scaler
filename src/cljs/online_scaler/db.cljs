@@ -28,11 +28,14 @@
               ;; example element
               ;; {:attribute-name  {:measure "nominal"
               ;;                    :values    [vals] ;ordered values 
-              ;;                    :distinct  [vals]} ;distinct values
+              ;;                    :distinct  [vals] ;distinct values
+              ;;                    }
               ;;  :other-attribute {:measure "ordinal"
               ;;                    :values     [vals]
               ;;                    :distinct  [vals]
               ;;                    :attributes [atts]
+              ;;                    :incidence {:att {:obj true}}
+              ;;                    }
 
    ;;;-Export------------------------------------------------------------------
    :warning      false

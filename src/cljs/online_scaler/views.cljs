@@ -179,7 +179,7 @@
   [:div {:class "tile is-child box has-text-centered"}
       [:button {:class "button is-medium is-info"
                 :on-click #(re-frame/dispatch
-                            [::events/set-panel "export"])}
+                            [::events/set-export-warning nil])}
                 "Export"]])
 
 (defn scale-previous-attribute-button [current-attribute]
@@ -235,13 +235,32 @@
 
 ;;;-Scale-Ordinal--------------------------------------------------------------
 
-(defn ordinal-scale [current-attribute]
+(defn ordinal-attribute-form [current-attribute]
+  [:div {:class "field is-grouped"}
+    [:div {:class "control"}
+      [:input {:class "input" 
+               :id    "new-attribute"
+               :type  "text" 
+               :placeholder "New Attribute Name"}]]
+    [:div {:class "control"}
+      [:button {:class "button is-info"
+                :type  "button"
+                :on-click #(re-frame/dispatch
+                            [::events/add-new-attribute 
+                              (.-value (. js/document 
+                                          getElementById 
+                                          "new-attribute"))])}
+               "Add"]]])
+
+(defn ordinal-table [current-attribute]
   (let [attributes 
          @(re-frame/subscribe [::subs/current-attributes current-attribute])
         values     
-         @(re-frame/subscribe [::subs/current-distinct current-attribute])]
+         @(re-frame/subscribe [::subs/current-distinct current-attribute])
+        incidence
+         @(re-frame/subscribe [::subs/get-incidence current-attribute])]
     [:div {:class "table-container"}
-      [:table {:class "table is-bordered is-hoverable is-unselectable"}
+      [:table {:class "table is-bordered is-scrollable is-unselectable"}
         [:thead
           [:tr [:th]
                (map #(vector :th {:key %} %) attributes)]]
@@ -249,11 +268,25 @@
           (map
             (fn [value]
               [:tr {:key value}
-                [:td {:key value} value]
+                [:td {:key value} [:b value]]
                 (map
-                  (fn [attribute] (vector :td {:key attribute} nil))
+                  (fn [attribute] 
+                   (vector :td {:class "has-text-centered"
+                                :key attribute
+                                :on-click #(re-frame/dispatch 
+                                            [::events/swap-incidence 
+                                              (vector attribute value)])}
+                               (if (get-in incidence [(keyword attribute) 
+                                                      (keyword value)]) 
+                                   "X" )))
                   attributes)])
             values)]]]))
+
+
+(defn ordinal-scale [current-attribute]
+  [:div
+    [ordinal-attribute-form current-attribute]
+    [ordinal-table current-attribute]])
 
 ;;;-Scale-Scaling--------------------------------------------------------------
 
@@ -359,14 +392,14 @@
 
 (defn export-panel []
   (let [warning       (re-frame/subscribe [::subs/warning])
-        context-url   (re-frame/subscribe [::subs/context-url])
-        config-url    (re-frame/subscribe [::subs/config-url])]
+        context-url   @(re-frame/subscribe [::subs/context-url])
+        config-url    @(re-frame/subscribe [::subs/config-url])]
     [:div {:class "container is-fluid"}
       [:div {:class "tile is-ancestor is-vertical"}
         (if (and @warning (or context-url config-url)) [export-warning])
         [:div {:class "tile"}
-          [export-context @context-url] 
-          [export-config @config-url]]]]))
+          [export-context context-url] 
+          [export-config config-url]]]]))
 
 ;;;-Main-----------------------------------------------------------------------
 

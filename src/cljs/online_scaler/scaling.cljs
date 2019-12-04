@@ -3,66 +3,104 @@
 
 ;;;-Nominal-Scale--------------------------------------------------------------
 
-(defn build-base
-  "Given all distinct values builds a map with their corresponding incidence."
-  [values]
-  (let [value-count (count values)
+(defn nominal-scale
+  "Builds a map with distinct values and their corresponding incidence."
+  [scaling]
+  (let [values      (:distinct scaling)
+        value-count (count values)
         ;; quadratic diagonal matrix with n = value-count
-        incidence   (map
+        matrix      (map
                       (fn [row position] (assoc row position "X"))
                       (repeat value-count (vec (repeat value-count ".")))
                       (range value-count))]
-    ;; build map with {:value incidence-row}
+    ;; build map with {:value matrix-row}
     (apply merge
       (map
         (fn [value row] (hash-map value row))
         values
-        incidence))))
+        matrix))))
 
-(defn scale-nominal
-  "Given the attribute with scaling returns nominal scaled incidence with
-   attributes."
-  [attribute scaling]
-  (let [distinct-values (:distinct scaling)
-        base-map        (build-base distinct-values)]
-    ;; build ((attributes)((incidence)))
-    (list ;; scaled attributes are named "original | value"
-          (map #(str attribute "|" %) distinct-values)
-          ;; get the incidence row for each value
-          (list
-            (map
-              #(get base-map %)
-              (:values scaling))))))
+;;;-Ordinal-Scale--------------------------------------------------------------
+
+(defn ordinal-scale
+  "Builds a map with distinct values and their corresponding incidence."
+  [scaling]
+  (let [values     (:distinct scaling)
+        attributes (:attributes scaling)
+				incidence  (:incidence scaling)
+				;; build #valuesX#attributes matrix based on incidence
+				matrix  (map
+									(fn [value]
+										(map 
+											(fn [attribute]
+												(if (get-in incidence [(keyword attribute)
+																							 (keyword value)])
+														"X"
+														".")) 
+											attributes))
+									values)]
+    ;; build map with {:value matrix-row}
+    (apply merge
+      (map
+        (fn [value row] (hash-map value row))
+        values
+        matrix))))
 
 ;;;-Scaling--------------------------------------------------------------------
 
-(defn apply-measure
-  "Selects the appropriate function for the given attribute."
-  [attribute scaling]
+(defn select-function
+  "Selects the appropriate function for the given data."
+  [scaling]
   (case (:measure scaling)
-    "nominal" (scale-nominal attribute scaling)
-    (scale-nominal attribute scaling)))
+    "nominal" (nominal-scale scaling)
+    "ordinal" (ordinal-scale scaling)
+    nil))
+
+(defn apply-measure
+  "Applies scaling data to each object."
+  [scaling]
+  (let [base-map        (select-function scaling)]
+    ;; get the incidence row for each value
+		(map
+			#(get base-map %)
+			(:values scaling))))
 
 (defn scale 
   "Applies selected scales to all attributes."
-  [db]
-  (let [;; attributes which will be scaled
-        attributes (get-in db [:selection :attributes])
-        ;; and how they are scaled
-        scaling    (get-in db [:scaling])] 
-    (map 
-      #(apply-measure % ((keyword %) scaling))
-      attributes)))
+  [attributes scaling]
+	(map 
+		#(apply-measure ((keyword %) scaling))
+		attributes))
+
+;;;-Attributes-----------------------------------------------------------------
+
+(defn get-attributes
+  "Get all new attributes based on measure."
+  [attributes scaling]
+	(map
+		#(let [data ((keyword %) scaling)]
+			 (case (:measure data)
+				 "nominal" (:distinct data)
+				 "ordinal"  (:attributes data)
+				 nil))
+		attributes))
+
+;;;-Burmeister-----------------------------------------------------------------
 
 (defn write 
   "Converts the scaled context into burmeister format."
   [db]
-  (let [;; combine list of ((atts)((inc))) into one ((atts)(incs))
-        context   (apply map concat (filter some? (scale db)))
-        attributes (first context)
-        ;; combine the incidence lists
-        incidence  (apply map concat (second context))
+  (let [;; attributes which will be scaled
+        old-attributes (get-in db [:selection :attributes])
+        ;; and how they are scaled
+        scaling        (get-in db [:scaling])
+				;; get a list of all new attributes
+        attributes (apply concat (get-attributes old-attributes scaling))
+        ;; combine list of incidences into one
+        incidence  (apply map concat (scale old-attributes scaling))
+        ;; objects are just numbered
         objects    (range (count incidence))]
+		(print incidence)
     (str \B \newline
          \newline
          (count objects) \newline
