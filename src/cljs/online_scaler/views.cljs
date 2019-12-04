@@ -8,7 +8,7 @@
 ;;;-Header---------------------------------------------------------------------
 
 (defn header [current-panel]
-  (let [can-select @(re-frame/subscribe [::subs/mv-ctx-attributes])
+  (let [can-select @(re-frame/subscribe [::subs/ctx-attributes])
         can-scale @(re-frame/subscribe [::subs/current-attribute])]
     [:div {:class "tabs is-centered"}
       [:ul
@@ -34,21 +34,24 @@
 ;;;-Upload---------------------------------------------------------------------
 
 (defn upload-file []
-	[:div {:class "file has-name is-boxed is-info is-pulled-right"}
-		[:label {:class "file-label"}
-			[:input {:class "file-input" 
-               :type "file"
-               :accept ".csv"
-               :on-change #(re-frame/dispatch 
-                            [::events/mv-ctx-file-change 
-                              (-> % .-target .-files (aget 0))])}]
-			[:span {:class "file-cta"}
-				[:span {:class "file-icon"}
-					[:i {:class "fas fa-upload"}]]
-				[:span {:class "file-label"}
-					"Choose a file…"]]
-      [:span {:class "file-name"}
-        @(re-frame/subscribe [::subs/mv-ctx-file-name])]]])
+  (let [file-name @(re-frame/subscribe [::subs/mv-ctx-file-name])]
+    [:div {:class "file has-name is-boxed is-info is-pulled-right"}
+      [:label {:class "file-label"}
+        [:input {:class "file-input" 
+                 :type "file"
+                 :accept ".csv"
+                 :on-change #(re-frame/dispatch 
+                              [::events/mv-ctx-file-change 
+                                (-> % .-target .-files (aget 0))])}]
+        [:span {:class "file-cta"}
+          [:span {:class "file-icon"}
+            [:i {:class "fas fa-upload"}]]
+          [:span {:class "file-label"}
+            "Choose a file…"]]
+        [:span {:class "file-name"}
+          (if (nil? file-name) 
+              [:font {:color "lightgrey"} "No file selected."]
+              file-name)]]]))
 
 (defn upload-checkbox []
 	[:label {:class "checkbox is-pulled-left"}
@@ -78,21 +81,24 @@
 ;;;-Import---------------------------------------------------------------------
 
 (defn import-file []
-	[:div {:class "file has-name is-boxed is-info is-pulled-right"}
-		[:label {:class "file-label"}
-			[:input {:class "file-input" 
-               :type "file"
-               :accept ".json"
-               :on-change #(re-frame/dispatch 
-                            [::events/import-file-change 
-                              (-> % .-target .-files (aget 0))])}]
-			[:span {:class "file-cta"}
-				[:span {:class "file-icon"}
-					[:i {:class "fas fa-upload"}]]
-				[:span {:class "file-label"}
-					"Choose a file…"]]
-      [:span {:class "file-name"}
-        @(re-frame/subscribe [::subs/import-name])]]])
+  (let [import-name @(re-frame/subscribe [::subs/import-name])]
+    [:div {:class "file has-name is-boxed is-info is-pulled-right"}
+      [:label {:class "file-label"}
+        [:input {:class "file-input" 
+                 :type "file"
+                 :accept ".json"
+                 :on-change #(re-frame/dispatch 
+                              [::events/import-file-change 
+                                (-> % .-target .-files (aget 0))])}]
+        [:span {:class "file-cta"}
+          [:span {:class "file-icon"}
+            [:i {:class "fas fa-upload"}]]
+          [:span {:class "file-label"}
+            "Choose a file…"]]
+        [:span {:class "file-name"}
+          (if (nil? import-name)
+              [:font {:color "lightgrey"} "No file selected."]
+              import-name)]]]))
 
 (defn import-form []
   (let [file (re-frame/subscribe [::subs/import-db])]
@@ -136,31 +142,36 @@
              :key attribute})
       [:td (first attribute)]]))
 
-(defn select-attributes []
-  (let [attributes (re-frame/subscribe [::subs/mv-ctx-attributes])]
-    [:div {:class "box"
-           :style {:height "450px"}}
-      [:h1 {:class "content title"}
-        "Attributes to scale"]
-      [:div {:class "table-container is-unselectable box is-paddingless"
-             :style {:height      "350px"
-                     :overflow    "auto"}} 
-        [:table {:class "table is-fullwidth is-hoverable is-bordered"}
-          [:tbody
-            (doall (map select-single-attribute @attributes))]]]]))
+(defn select-attributes [attributes]
+  [:div {:class "box"
+         :style {:height "450px"}}
+    [:h1 {:class "content title"}
+      "Attributes to scale"]
+    [:div {:class "table-container is-unselectable box is-paddingless"
+           :style {:height      "350px"
+                   :overflow    "auto"}} 
+      [:table {:class "table is-fullwidth is-hoverable is-bordered"}
+        [:tbody
+          (doall (map select-single-attribute attributes))]]]])
 
 (defn select-panel []
-  [:div {:class "container is-fluid"}
-    [:div {:class "columns"}
-      [:div {:class "column"}
-        [select-attributes]]
-      [:div {:class "column is-one-quarter"}
-        [:div {:class "box has-text-centered"}
-        [:button {:type "button"
-                  :class "button is-large is-info"
-                  :on-click #(re-frame/dispatch
-                             [::events/initiate-attributes nil])}
-                 "Select"]]]]])
+  (let [attributes (re-frame/subscribe [::subs/ctx-attributes])]
+    [:div {:class "container is-fluid"}
+      [:div {:class "columns"}
+        [:div {:class "column"}
+          [select-attributes @attributes]]
+        [:div {:class "column is-one-quarter"}
+          [:div {:class "box has-text-centered"}
+          [:button (merge 
+                     {:type "button"
+                      :class "button is-large is-info"
+                      :on-click #(re-frame/dispatch
+                                 [::events/initiate-attributes nil])}
+                     ;; test if all attributes are unselected
+                     (if (some identity (map second @attributes))
+                       {}
+                       {:disabled true}))
+                   "Select"]]]]]))
 
 ;;;-Scale-Attribute-Selection--------------------------------------------------
 
@@ -225,8 +236,24 @@
 ;;;-Scale-Ordinal--------------------------------------------------------------
 
 (defn ordinal-scale [current-attribute]
-  [:div {:class "table-container"}
-    [:table {:class "table"}]])
+  (let [attributes 
+         @(re-frame/subscribe [::subs/current-attributes current-attribute])
+        values     
+         @(re-frame/subscribe [::subs/current-distinct current-attribute])]
+    [:div {:class "table-container"}
+      [:table {:class "table is-bordered is-hoverable is-unselectable"}
+        [:thead
+          [:tr [:th]
+               (map #(vector :th {:key %} %) attributes)]]
+        [:tbody
+          (map
+            (fn [value]
+              [:tr {:key value}
+                [:td {:key value} value]
+                (map
+                  (fn [attribute] (vector :td {:key attribute} nil))
+                  attributes)])
+            values)]]]))
 
 ;;;-Scale-Scaling--------------------------------------------------------------
 
@@ -277,9 +304,6 @@
 
 (defn scale-panel []
   (let [current-attribute @(re-frame/subscribe [::subs/current-attribute])]
-    ;; if there's no current attribute, got back to the select panel
-    (if (nil? current-attribute) 
-        (re-frame/dispatch [::events/set-panel "select"]))
     [:div {:class "container is-fluid"} 
       [scale-header current-attribute]
       [statistics-box current-attribute]
@@ -295,7 +319,7 @@
           " generate them again to include possible changes."]]])
 
 (defn export-context [url]
-  (let [title (re-frame/subscribe [::subs/mv-ctx-file-name])]
+  (let [title (re-frame/subscribe [::subs/ctx-file-name])]
     [:div {:class "tile is-parent"}
       [:div {:class "container box has-text-centered"}
         [:h1 {:class "title"}

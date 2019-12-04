@@ -20,40 +20,38 @@
         incidence))))
 
 (defn scale-nominal
-  "Given all values of a colum scales them nominal."
-  [values attribute db]
-  (let [new-attributes  (distinct values)
-        base-map        (build-base new-attributes)]
+  "Given the attribute with scaling returns nominal scaled incidence with
+   attributes."
+  [attribute scaling]
+  (let [distinct-values (:distinct scaling)
+        base-map        (build-base distinct-values)]
     ;; build ((attributes)((incidence)))
-    (list (map #(str (first attribute) "|" %) new-attributes)
+    (list ;; scaled attributes are named "original | value"
+          (map #(str attribute "|" %) distinct-values)
           ;; get the incidence row for each value
           (list
             (map
               #(get base-map %)
-              values)))))
+              (:values scaling))))))
 
 ;;;-Scaling--------------------------------------------------------------------
 
 (defn apply-measure
   "Selects the appropriate function for the given attribute."
-  [values attribute db]
-  (case (get-in db [:scaling (keyword attribute) :measure])
-    "nominal" (scale-nominal values attribute db)
-    (scale-nominal values attribute db)))
+  [attribute scaling]
+  (case (:measure scaling)
+    "nominal" (scale-nominal attribute scaling)
+    (scale-nominal attribute scaling)))
 
 (defn scale 
   "Applies selected scales to all attributes."
   [db]
   (let [;; attributes which will be scaled
-        attributes (get-in db [:mv-ctx :attributes])
-        mv-ctx     (get-in db [:mv-ctx :file])] 
+        attributes (get-in db [:selection :attributes])
+        ;; and how they are scaled
+        scaling    (get-in db [:scaling])] 
     (map 
-      ;; scale each attribute with its entry in db->scaling
-      (fn [values attribute]
-        (if (second attribute)
-          (apply-measure values attribute db)
-          nil))
-      mv-ctx
+      #(apply-measure % ((keyword %) scaling))
       attributes)))
 
 (defn write 

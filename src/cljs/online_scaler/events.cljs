@@ -48,28 +48,34 @@
      :db  (let [db                (:db cofx)
                 header            (get-in db [:mv-ctx :header])
                 mv-ctx            (get-in db [:mv-ctx :file])
-                first-line        (first mv-ctx)
                 attribute-vector  (if header
                                       ;; either use given names
                                       (mapv 
                                         #(vector (str %) true) 
-                                        first-line)
+                                        (first mv-ctx))
                                       ;; or generate generic ones
                                       (mapv
                                         #(vector (str "Attribute#" %) true)
-                                        (range (count first-line))))
-                ;; transpose [[1 1][2 2]] -> [[1 2][1 2]]
-                new-mv-ctx        (apply map list
-                                    (if header (drop 1 mv-ctx) mv-ctx))]
+                                        (range (count (first mv-ctx)))))
+                nested-values     (apply map list mv-ctx)]
           (-> db
-            (assoc-in [:mv-ctx :file] new-mv-ctx)
-            (assoc-in [:mv-ctx :attributes] attribute-vector)
-            (assoc-in [:scaling] (apply merge
-                                    (map 
-                                      #(hash-map 
-                                         (keyword %)
-                                         (hash-map :measure "nominal")) 
-                                      (map first attribute-vector))))))}))
+            (assoc-in [:ctx :name] (get-in db [:mv-ctx :name]))
+            (assoc-in [:ctx :attributes] attribute-vector)
+            (assoc-in [:scaling] 
+              ;; for each attribute build a map with all its distinct values
+              (apply merge
+                (map 
+                  (fn [attribute values]
+                    (hash-map 
+                      (keyword attribute)
+                      (hash-map :measure  "nominal"
+                                :values   values
+                                :distinct (into #{} values))))
+                  (map first attribute-vector)
+                  nested-values)))
+            (assoc-in [:mv-ctx] {:name   nil
+                                 :file   nil
+                                 :header false})))}))
 
 ;;;-Import---------------------------------------------------------------------
 
@@ -110,14 +116,14 @@
  ::attribute-selection-down
   (fn [cofx [_ attribute]]
     (let [db    (:db cofx) 
-          index (.indexOf (get-in db [:mv-ctx :attributes]) attribute)]
+          index (.indexOf (get-in db [:ctx :attributes]) attribute)]
       {:dispatch [::set-tmp index]})))
 
 (re-frame/reg-event-db
  ::attribute-selection-up
   (fn [db [_ attribute]]
     (let [down-index (:tmp db) 
-          up-index   (.indexOf (get-in db [:mv-ctx :attributes]) attribute)
+          up-index   (.indexOf (get-in db [:ctx :attributes]) attribute)
           index-list (if (> down-index up-index)
                          (conj (range up-index down-index) down-index)
                          (conj (range down-index up-index) up-index))]
@@ -130,7 +136,7 @@
             (recur
               (update-in 
                 loop-db 
-                [:mv-ctx :attributes (first loop-index-list) 1]
+                [:ctx :attributes (first loop-index-list) 1]
                 not)
               (drop 1 loop-index-list)))))))
 
@@ -143,7 +149,7 @@
                                 first
                                 (filter
                                   #(= (second %) true)
-                                  (get-in db [:mv-ctx :attributes])))]
+                                  (get-in db [:ctx :attributes])))]
            (-> db
              (assoc-in [:selection :attributes] attribute-list)
              (assoc-in 
@@ -207,7 +213,7 @@
   (fn [cofx _]
     {:dispatch [::remove-export-warning nil]
      :db
-       (let [;; remove urls since the files are not included
+       (let [;; remove urls from db since the files are not included
              db           (:db cofx)
              new-db       (-> db
                             (assoc-in [:warning] false)

@@ -34,9 +34,21 @@
 ;;;-Selection------------------------------------------------------------------
 
 (re-frame/reg-sub
- ::mv-ctx-attributes
+ ::ctx-attributes
   (fn [db _]
-    (get-in db [:mv-ctx :attributes])))
+    (get-in db [:ctx :attributes])))
+
+;;;-Ordinal-Scaling------------------------------------------------------------
+
+(re-frame/reg-sub
+ ::current-distinct
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :distinct])))
+
+(re-frame/reg-sub
+ ::current-attributes
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :attributes])))
 
 ;;;-Scaling--------------------------------------------------------------------
 
@@ -71,6 +83,11 @@
  ::warning
   (fn [db _]
     (get-in db [:warning])))
+
+(re-frame/reg-sub
+ ::ctx-file-name
+  (fn [db _]
+    (get-in db [:ctx :name])))
 
 ;;;-Panel----------------------------------------------------------------------
 
