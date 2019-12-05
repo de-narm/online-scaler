@@ -293,6 +293,25 @@
                                           "new-attribute"))])}
                "Add"]]])
 
+(defn ordinal-table-buttons [attributes]
+  [:table {:class "table is-scrollable is-unselectable is-marginless"}
+    [:tbody
+      [:tr 
+        [:td {:key "empty"}
+          [:div {:style {:width "75px"}}]]
+      (map #(vector :td {:key %}
+                    [:div {:style 
+                            {:width "75px"
+                             :white-space "nowrap"
+                             :overflow "hidden"
+                             :text-overflow "ellipsis"}}
+                          [:button {:class "button"
+                                    :on-click 
+                                     (fn [a] (re-frame/dispatch
+                                               [::events/remove-attribute %]))} 
+                                    "-"]]) 
+           attributes)]]])
+
 (defn ordinal-table [current-attribute]
   (let [attributes 
          @(re-frame/subscribe [::subs/current-attributes current-attribute])
@@ -301,6 +320,7 @@
         incidence
          @(re-frame/subscribe [::subs/get-incidence current-attribute])]
     [:div {:class "table-container"}
+      [ordinal-table-buttons attributes]
       [:table {:class "table is-bordered is-scrollable is-unselectable"}
         [:thead
           [:tr [:th]

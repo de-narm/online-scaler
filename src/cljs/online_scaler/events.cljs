@@ -169,6 +169,17 @@
         #(if (some #{attribute} %) % (conj % attribute))))))
 
 (re-frame/reg-event-db
+ ::remove-attribute
+  (fn [db [_ attribute]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (-> db
+        (assoc-in [:scaling (keyword current-attribute) 
+                   :incidence (keyword attribute)] 
+                  nil)
+        (update-in [:scaling (keyword current-attribute) :attributes] 
+                   (fn [a] (remove #{attribute} a)))))))
+
+(re-frame/reg-event-db
  ::swap-incidence
   (fn [db [_ [attribute object]]]
     (let [current-attribute (get-in db [:selection :current-attribute])]
