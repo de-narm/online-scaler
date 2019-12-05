@@ -365,13 +365,14 @@
 ;;;-Scale-Scaling--------------------------------------------------------------
 
 (defn scaling-box [current-attribute]
-  (let [measure (re-frame/subscribe 
+  (let [measure @(re-frame/subscribe 
                   [::subs/attribute-measure current-attribute])]
-    [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Scaling"]
-      (case @measure
-        "ordinal"   [ordinal-scale current-attribute]
-        nil)]))
+    (if (not (= measure "nominal"))
+      [:div {:class "box"}
+        [:h5 {:class "title is-5"} "Scaling"]
+        (case measure
+          "ordinal"   [ordinal-scale current-attribute]
+          nil)])))
 
 ;;;-Scale-Header---------------------------------------------------------------
 
