@@ -57,7 +57,8 @@
                                       (mapv
                                         #(vector (str "Attribute#" %) true)
                                         (range (count (first mv-ctx)))))
-                nested-values     (apply map list mv-ctx)]
+                nested-values     (apply map list 
+                                    (if header (drop 1 mv-ctx) mv-ctx))]
           (-> db
             (assoc-in [:ctx :name] (get-in db [:mv-ctx :name]))
             (assoc-in [:ctx :attributes] attribute-vector)

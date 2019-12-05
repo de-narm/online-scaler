@@ -38,6 +38,11 @@
   (fn [db _]
     (get-in db [:ctx :attributes])))
 
+(re-frame/reg-sub
+ ::ctx-values
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :values])))
+
 ;;;-Ordinal-Scaling------------------------------------------------------------
 
 (re-frame/reg-sub

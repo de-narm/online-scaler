@@ -79,10 +79,12 @@
   [attributes scaling]
 	(map
 		#(let [data ((keyword %) scaling)]
-			 (case (:measure data)
-				 "nominal" (:distinct data)
-				 "ordinal"  (:attributes data)
-				 nil))
+			 (map
+         (fn [string] (str % "|" string))
+         (case (:measure data)
+           "nominal" (:distinct data)
+           "ordinal"  (:attributes data)
+           nil)))
 		attributes))
 
 ;;;-Burmeister-----------------------------------------------------------------
@@ -100,7 +102,6 @@
         incidence  (apply map concat (scale old-attributes scaling))
         ;; objects are just numbered
         objects    (range (count incidence))]
-		(print incidence)
     (str \B \newline
          \newline
          (count objects) \newline
