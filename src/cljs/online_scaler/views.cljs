@@ -280,6 +280,12 @@
   [:div {:class "field is-grouped"}
     [:div {:class "control"}
       [:input {:class "input" 
+               :on-key-down #(if (= 13 (.-which %))
+               (re-frame/dispatch
+                           [::events/add-new-attribute 
+                             (.-value (. js/document 
+                                         getElementById 
+                                         "new-attribute"))]))
                :id    "new-attribute"
                :type  "text" 
                :placeholder "New Attribute Name"}]]
@@ -324,18 +330,46 @@
       [:table {:class "table is-bordered is-scrollable is-unselectable"}
         [:thead
           [:tr [:th]
-               (map #(vector :th {:key %} 
-                       [:div {:style 
+               (map (fn [value]
+                      (vector 
+                        :th {:key value} 
+                        [:div {:draggable "true"
+                               :on-drag-over #(.preventDefault %)
+                               :on-drag-enter #(.preventDefault %)
+                               :on-drag-start 
+                                 #(.setData (.-dataTransfer %) 
+                                            "text/plain" 
+                                            value)
+                               :on-drop
+                                 (fn[a] (.preventDefault a)
+                                        (re-frame/dispatch
+                                          [::events/drop-column 
+                                  (vector
+                                    (.getData (.-dataTransfer a) "Text")
+                                    value)]))
+                              :style 
                                {:width "75px"
                                 :white-space "nowrap"
                                 :overflow "hidden"
                                 :text-overflow "ellipsis"}}
-                        %]) 
+                        value])) 
                     attributes)]]
         [:tbody
           (map
             (fn [value]
-              [:tr {:key value}
+              [:tr {:key value
+                    :draggable "true"
+                    :on-drag-over #(.preventDefault %)
+                    :on-drag-enter #(.preventDefault %)
+                    :on-drag-start 
+                      #(.setData (.-dataTransfer %) "text/plain" value)
+                    :on-drop
+                      (fn[a] (.preventDefault a)
+                             (re-frame/dispatch
+                               [::events/drop-row 
+                                 (vector
+                                   (.getData (.-dataTransfer a) "Text")
+                                   value)]))}
                 [:td {:key value} [:div {:style 
                                           {:width "75px"
                                            :font-weight "bold"

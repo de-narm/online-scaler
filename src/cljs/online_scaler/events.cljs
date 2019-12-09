@@ -189,6 +189,32 @@
          :incidence (keyword attribute) (keyword object)]
         #(if (nil? %) true (not %))))))
 
+(re-frame/reg-event-db
+ ::drop-row
+  (fn [db [_ [attribute position]]]
+    (let [current (get-in db [:selection :current-attribute])]
+      (update-in 
+        db 
+        [:scaling (keyword current) :distinct]
+        #(let [removed (filter (fn [a](not (= a attribute))) %)
+               index   (.indexOf % position)]
+               (concat (take index removed)
+                       (list attribute)
+                       (drop index removed)))))))
+
+(re-frame/reg-event-db
+ ::drop-column
+  (fn [db [_ [attribute position]]]
+    (let [current (get-in db [:selection :current-attribute])]
+      (update-in 
+        db 
+        [:scaling (keyword current) :attributes]
+        #(let [removed (filter (fn [a](not (= a attribute))) %)
+               index   (.indexOf % position)]
+               (concat (take index removed)
+                       (list attribute)
+                       (drop index removed)))))))
+
 ;;;-Scaling--------------------------------------------------------------------
 
 (re-frame/reg-event-db
