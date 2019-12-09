@@ -35,6 +35,7 @@
               ;;                    :distinct  [vals]
               ;;                    :attributes [atts]
               ;;                    :incidence {:att {:obj true}}
+              ;;                    :relation-name "name" ;given in ctx view
               ;;                    }
 
    ;;;-Export------------------------------------------------------------------

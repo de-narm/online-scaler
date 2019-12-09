@@ -60,6 +60,11 @@
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :incidence])))
 
+(re-frame/reg-sub
+ ::get-relation
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :relation-name])))
+
 ;;;-Scaling--------------------------------------------------------------------
 
 (re-frame/reg-sub

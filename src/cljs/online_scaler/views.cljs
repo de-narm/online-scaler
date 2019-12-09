@@ -136,8 +136,15 @@
       [:h1 {:class "title"} "Preview"]
       [:table {:class "table is-bordered"}
         [:thead 
-          [:tr (doall (map #(vector :th {:key %} %) attributes))]]
-        [:tbody
+          [:tr (doall (map #(vector :th {:key %} 
+                              [:div {:style 
+                                      {:width "75px"
+                                       :white-space "nowrap"
+                                       :overflow "hidden"
+                                       :text-overflow "ellipsis"}}
+                                     %]) 
+                           attributes))]]
+        [:tbody                     
           (doall
             (map (fn [row rnum] (vector 
                                   :tr {:key rnum}
@@ -329,7 +336,14 @@
       [ordinal-table-buttons attributes]
       [:table {:class "table is-bordered is-scrollable is-unselectable"}
         [:thead
-          [:tr [:th]
+          [:tr [:th [:input {:class "input is-small"
+                             :style {:width "75px"}
+                             :on-change #(re-frame/dispatch
+                                          [::events/relation-name
+                                            (-> % .-target .-value)])
+                             :value @(re-frame/subscribe
+                                      [::subs/get-relation 
+                                        current-attribute])}]]
                (map (fn [value]
                       (vector 
                         :th {:key value} 
@@ -344,9 +358,10 @@
                                  (fn[a] (.preventDefault a)
                                         (re-frame/dispatch
                                           [::events/drop-column 
-                                  (vector
-                                    (.getData (.-dataTransfer a) "Text")
-                                    value)]))
+                                            (vector
+                                              (.getData 
+                                                (.-dataTransfer a) "Text")
+                                              value)]))
                               :style 
                                {:width "75px"
                                 :white-space "nowrap"
@@ -357,25 +372,26 @@
         [:tbody
           (map
             (fn [value]
-              [:tr {:key value
-                    :draggable "true"
-                    :on-drag-over #(.preventDefault %)
-                    :on-drag-enter #(.preventDefault %)
-                    :on-drag-start 
-                      #(.setData (.-dataTransfer %) "text/plain" value)
-                    :on-drop
-                      (fn[a] (.preventDefault a)
-                             (re-frame/dispatch
-                               [::events/drop-row 
-                                 (vector
-                                   (.getData (.-dataTransfer a) "Text")
-                                   value)]))}
-                [:td {:key value} [:div {:style 
-                                          {:width "75px"
-                                           :font-weight "bold"
-                                           :white-space "nowrap"
-                                           :overflow "hidden"
-                                           :text-overflow "ellipsis"}}
+              [:tr {:key value}
+                [:td {:key value} 
+                  [:div {:draggable "true"
+                         :on-drag-over #(.preventDefault %)
+                         :on-drag-enter #(.preventDefault %)
+                         :on-drag-start 
+                           #(.setData (.-dataTransfer %) "text/plain" value)
+                         :on-drop
+                           (fn[a] (.preventDefault a)
+                                  (re-frame/dispatch
+                                    [::events/drop-row 
+                                      (vector
+                                        (.getData (.-dataTransfer a) "text")
+                                        value)]))
+                         :style 
+                           {:width "75px"
+                            :font-weight "bold"
+                            :white-space "nowrap"
+                            :overflow "hidden"
+                            :text-overflow "ellipsis"}}
                 value]]
                 (map
                   (fn [attribute] 

@@ -71,7 +71,7 @@
                       (keyword attribute)
                       (hash-map :measure  "nominal"
                                 :values   values
-                                :distinct (into #{} values))))
+                                :distinct (distinct values))))
                   (map first attribute-vector)
                   nested-values)))
             (assoc-in [:mv-ctx] {:name   nil
@@ -214,6 +214,15 @@
                (concat (take index removed)
                        (list attribute)
                        (drop index removed)))))))
+
+(re-frame/reg-event-db
+ ::relation-name
+  (fn [db [_ relation]]
+    (let [current (get-in db [:selection :current-attribute])]
+      (assoc-in
+        db
+        [:scaling (keyword current) :relation-name]
+        relation))))
 
 ;;;-Scaling--------------------------------------------------------------------
 
