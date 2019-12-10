@@ -43,12 +43,19 @@
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :values])))
 
-;;;-Ordinal-Scaling------------------------------------------------------------
+;;;-Ordinal-Scaling-Drag-------------------------------------------------------
+
+(re-frame/reg-sub
+ ::context-view
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :context-view])))
 
 (re-frame/reg-sub
  ::current-distinct
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :distinct])))
+
+;;;-Ordinal-Scaling-Context----------------------------------------------------
 
 (re-frame/reg-sub
  ::current-attributes

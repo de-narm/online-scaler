@@ -31,10 +31,14 @@
               ;;                    :distinct  [vals] ;distinct values
               ;;                    }
               ;;  :other-attribute {:measure "ordinal"
-              ;;                    :values     [vals]
-              ;;                    :distinct  [vals]
-              ;;                    :attributes [atts]
-              ;;                    :incidence {:att {:obj true}}
+              ;;                    :values       [vals]
+              ;;                    :distinct     [vals]
+              ;;                    :context-view false
+              ;;                    ---------Drag------------------------------
+              ;;                    
+              ;;                    ---------Context---------------------------
+              ;;                    :attributes    [atts]
+              ;;                    :incidence     {:att {:obj true}}
               ;;                    :relation-name "name" ;given in ctx view
               ;;                    }
 

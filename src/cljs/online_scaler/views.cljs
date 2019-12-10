@@ -281,7 +281,45 @@
     [:div {:class "box"}
       [:h5 {:class "title is-5"} "Statistics"]]))
 
-;;;-Scale-Ordinal--------------------------------------------------------------
+;;;-Scale-Ordinal-Drag---------------------------------------------------------
+
+(defn ordinal-drag-single-attribute [value]
+  [:td {:key value
+        :draggable "true"
+        :on-drag #(.preventDefault %)
+        :on-drag-over #(.preventDefault %)
+        :on-drag-enter #(.preventDefault %)
+        :on-drag-leave #(.preventDefault %)
+        :on-drag-end #(.preventDefault %)
+        :on-drop #(.preventDefault %)
+        :on-drag-start 
+          #(.setData (.-dataTransfer %) 
+                     "text/plain" 
+                     value)}
+    [:div {:style 
+           {:width "140px"
+            :white-space "nowrap"
+            :overflow "hidden"
+            :text-overflow "ellipsis"}}
+    value]])
+
+(defn ordinal-drag-values [attribute]
+  (let [values @(re-frame/subscribe [::subs/current-distinct attribute])]
+    [:div {:class "table-container is-unselectable box is-paddingless"
+           :style {:height    "150px"
+                   :overflow  "auto"}} 
+      [:table {:class "table is-fullwidth is-bordered"}
+        [:tbody
+          (doall 
+            (map
+              #(vector :tr %)
+              (partition-all 5
+                (map ordinal-drag-single-attribute values))))]]]))
+
+(defn ordinal-drag [attribute]
+  [ordinal-drag-values attribute])
+
+;;;-Scale-Ordinal-Context------------------------------------------------------
 
 (defn ordinal-attribute-form [current-attribute]
   [:div {:class "field is-grouped"}
@@ -336,6 +374,7 @@
       [ordinal-table-buttons attributes]
       [:table {:class "table is-bordered is-scrollable is-unselectable"}
         [:thead
+          ;; first header element with input field
           [:tr [:th [:input {:class "input is-small"
                              :style {:width "75px"}
                              :on-change #(re-frame/dispatch
@@ -344,12 +383,16 @@
                              :value @(re-frame/subscribe
                                       [::subs/get-relation 
                                         current-attribute])}]]
+               ;; remaining headers with drag and drop
                (map (fn [value]
                       (vector 
                         :th {:key value} 
                         [:div {:draggable "true"
+                               :on-drag #(.preventDefault %)
                                :on-drag-over #(.preventDefault %)
                                :on-drag-enter #(.preventDefault %)
+                               :on-drag-leave #(.preventDefault %)
+                               :on-drag-end #(.preventDefault %)
                                :on-drag-start 
                                  #(.setData (.-dataTransfer %) 
                                             "text/plain" 
@@ -370,13 +413,17 @@
                         value])) 
                     attributes)]]
         [:tbody
+          ;; all distinct attributes with drag and drops
           (map
             (fn [value]
               [:tr {:key value}
                 [:td {:key value} 
                   [:div {:draggable "true"
+                         :on-drag #(.preventDefault %)
                          :on-drag-over #(.preventDefault %)
                          :on-drag-enter #(.preventDefault %)
+                         :on-drag-leave #(.preventDefault %)
+                         :on-drag-end #(.preventDefault %)
                          :on-drag-start 
                            #(.setData (.-dataTransfer %) "text/plain" value)
                          :on-drop
@@ -393,6 +440,7 @@
                             :overflow "hidden"
                             :text-overflow "ellipsis"}}
                 value]]
+                ;; the incidence of the current distinct object
                 (map
                   (fn [attribute] 
                    (vector :td {:class "has-text-centered"
@@ -406,11 +454,14 @@
                   attributes)])
             values)]]]))
 
+;;;-Scale-Ordinal--------------------------------------------------------------
 
 (defn ordinal-scale [current-attribute]
   [:div
-    [ordinal-attribute-form current-attribute]
-    [ordinal-table current-attribute]])
+    (if @(re-frame/subscribe [::subs/context-view current-attribute])
+        [:div [ordinal-attribute-form current-attribute]
+              [ordinal-table current-attribute]]
+        [ordinal-drag current-attribute])])
 
 ;;;-Scale-Scaling--------------------------------------------------------------
 
