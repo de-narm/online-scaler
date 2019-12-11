@@ -132,44 +132,45 @@
         values (apply map list
                  (map #(take 4 @(re-frame/subscribe [::subs/ctx-values %])) 
                       attributes))]
-    [:div {:class "table-container is-unselectable box"}
+    [:div {:class "box"}
       [:h1 {:class "title"} "Preview"]
-      [:table {:class "table is-bordered"}
-        [:thead 
-          [:tr (doall (map #(vector :th {:key %} 
-                              [:div {:style 
-                                      {:width "75px"
-                                       :white-space "nowrap"
-                                       :overflow "hidden"
-                                       :text-overflow "ellipsis"}}
-                                     %]) 
-                           attributes))]]
-        [:tbody                     
-          (doall
-            (map (fn [row rnum] (vector 
-                                  :tr {:key rnum}
-                                  (map 
-                                    (fn [element cnum] 
-                                      (vector 
-                                        :td 
-                                        {:key (str rnum "-" cnum)}
-                                        [:div
-                                          {:style 
-                                            {:width "75px"
-                                             :white-space "nowrap"
-                                             :overflow "hidden"
-                                             :text-overflow "ellipsis"}}
-                                              element]))
-                                    row
-                                    (range (count row)))))
-                 values
-                 (range 4)))
-            [:tr  {:key "ellipsis"}
-                  (doall (map (fn [number]
-                               (vector :td {:class "has-text-centered"
-                                            :key   (str "ellipsis-" number)}
-                                       "⋮ "))
-                             (range (count attributes))))]]]]))
+      [:div {:class "table-container is-unselectable"}
+        [:table {:class "table is-bordered"}
+          [:thead 
+            [:tr (doall (map #(vector :th {:key %} 
+                                [:div {:style 
+                                        {:width "75px"
+                                         :white-space "nowrap"
+                                         :overflow "hidden"
+                                         :text-overflow "ellipsis"}}
+                                       %]) 
+                             attributes))]]
+          [:tbody                     
+            (doall
+              (map (fn [row rnum] (vector 
+                                    :tr {:key rnum}
+                                    (map 
+                                      (fn [element cnum] 
+                                        (vector 
+                                          :td 
+                                          {:key (str rnum "-" cnum)}
+                                          [:div
+                                            {:style 
+                                              {:width "75px"
+                                               :white-space "nowrap"
+                                               :overflow "hidden"
+                                               :text-overflow "ellipsis"}}
+                                                element]))
+                                      row
+                                      (range (count row)))))
+                   values
+                   (range 4)))
+              [:tr  {:key "ellipsis"}
+                    (doall (map (fn [number]
+                                 (vector :td {:class "has-text-centered"
+                                              :key   (str "ellipsis-" number)}
+                                         "⋮ "))
+                               (range (count attributes))))]]]]]))
 
 (defn select-single-attribute [attribute]
   (let [mouse-pressed @(re-frame/subscribe [::subs/get-tmp])]
@@ -283,6 +284,18 @@
 
 ;;;-Scale-Ordinal-Drag---------------------------------------------------------
 
+(defn ordinal-drag-single-order [order]
+  [:div {:class "box"}])
+
+(defn ordinal-drag-orders [attribute]
+  (let [orders @(re-frame/subscribe [::subs/get-orders attribute])]
+    [:columns
+      (doall
+        (map 
+          #(vector ordinal-drag-single-order (second %))
+          orders))
+       [:column [:button {:class "button"} "+"]]]))
+
 (defn ordinal-drag-single-attribute [value]
   [:td {:key value
         :draggable "true"
@@ -317,7 +330,15 @@
                 (map ordinal-drag-single-attribute values))))]]]))
 
 (defn ordinal-drag [attribute]
-  [ordinal-drag-values attribute])
+  [:div
+    [ordinal-drag-values attribute]
+    [ordinal-drag-orders]
+    [:br]
+    [:br]
+    [:button {:class "button"
+              :on-click 
+                #(re-frame/dispatch [::events/switch-to-context nil])}
+             "Context view"]])
 
 ;;;-Scale-Ordinal-Context------------------------------------------------------
 

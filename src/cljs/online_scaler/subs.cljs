@@ -55,6 +55,11 @@
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :distinct])))
 
+(re-frame/reg-sub
+ ::get-orders
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :orders])))
+
 ;;;-Ordinal-Scaling-Context----------------------------------------------------
 
 (re-frame/reg-sub

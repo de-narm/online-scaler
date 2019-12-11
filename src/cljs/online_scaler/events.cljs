@@ -157,7 +157,17 @@
                [:selection :current-attribute] 
                (first attribute-list))))}))
 
-;;;-Ordinal-Scaling------------------------------------------------------------
+;;;-Ordinal-Scaling-Drag-------------------------------------------------------
+
+(re-frame/reg-event-db
+ ::switch-to-context
+  (fn [db _]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) :context-view]
+                true))))
+
+;;;-Ordinal-Scaling-Context----------------------------------------------------
 
 (re-frame/reg-event-db
  ::add-new-attribute

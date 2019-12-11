@@ -35,7 +35,8 @@
               ;;                    :distinct     [vals]
               ;;                    :context-view false
               ;;                    ---------Drag------------------------------
-              ;;                    
+              ;;                    :orders [{:relation "<"
+              ;;                              :elements [vals]}]
               ;;                    ---------Context---------------------------
               ;;                    :attributes    [atts]
               ;;                    :incidence     {:att {:obj true}}
