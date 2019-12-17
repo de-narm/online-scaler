@@ -206,11 +206,13 @@
       (update-in 
         db 
         [:scaling (keyword current) :distinct]
-        #(let [removed (filter (fn [a](not (= a attribute))) %)
-               index   (.indexOf % position)]
-               (concat (take index removed)
-                       (list attribute)
-                       (drop index removed)))))))
+        #(if (some #{attribute} %)
+          (let [removed (filter (fn [a](not (= a attribute))) %)
+                index   (.indexOf % position)]
+                (concat (take index removed)
+                        (list attribute)
+                        (drop index removed)))
+          %)))))
 
 (re-frame/reg-event-db
  ::drop-column
@@ -219,11 +221,13 @@
       (update-in 
         db 
         [:scaling (keyword current) :attributes]
-        #(let [removed (filter (fn [a](not (= a attribute))) %)
-               index   (.indexOf % position)]
-               (concat (take index removed)
-                       (list attribute)
-                       (drop index removed)))))))
+        #(if (some #{attribute} %)
+          (let [removed (filter (fn [a](not (= a attribute))) %)
+                index   (.indexOf % position)]
+                (concat (take index removed)
+                        (list attribute)
+                        (drop index removed)))
+          %)))))
 
 (re-frame/reg-event-db
  ::relation-name

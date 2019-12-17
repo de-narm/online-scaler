@@ -2,6 +2,7 @@
   (:require
    [clojure.string :refer [capitalize split]]
    [re-frame.core :as re-frame]
+   [online-scaler.view-util :as util]
    [online-scaler.events :as events]
    [online-scaler.subs :as subs]))
 
@@ -133,17 +134,16 @@
                  (map #(take 4 @(re-frame/subscribe [::subs/ctx-values %])) 
                       attributes))]
     [:div {:class "box"}
-      [:h1 {:class "title"} "Preview"]
+      [:div {:class "level is-marginless"}
+        [:h1 {:class "title"} "Preview"]
+        [util/tooltip "Try holding shift to scroll sideways!"]]
       [:div {:class "table-container is-unselectable"}
         [:table {:class "table is-bordered"}
           [:thead 
             [:tr (doall (map #(vector :th {:key %} 
-                                [:div {:style 
-                                        {:width "75px"
-                                         :white-space "nowrap"
-                                         :overflow "hidden"
-                                         :text-overflow "ellipsis"}}
-                                       %]) 
+                                [:div 
+                                  util/abbreviate-text
+                                  [:span {:title %} %]]) 
                              attributes))]]
           [:tbody                     
             (doall
@@ -155,12 +155,9 @@
                                           :td 
                                           {:key (str rnum "-" cnum)}
                                           [:div
-                                            {:style 
-                                              {:width "75px"
-                                               :white-space "nowrap"
-                                               :overflow "hidden"
-                                               :text-overflow "ellipsis"}}
-                                                element]))
+                                                util/abbreviate-text 
+                                                [:span {:title element} 
+                                                      element]]))
                                       row
                                       (range (count row)))))
                    values
@@ -193,8 +190,10 @@
 (defn select-attributes [attributes]
   [:div {:class "box"
          :style {:height "450px"}}
-    [:h1 {:class "content title"}
-      "Attributes to scale"]
+    [:div {:class "level is-marginless"}
+      [:h1 {:class "content title"}
+        "Attributes to scale"]
+      [util/tooltip "Try holding down the mouse button to multiselect!"]]
     [:div {:class "table-container is-unselectable box is-paddingless"
            :style {:height      "350px"
                    :overflow    "auto"}} 
@@ -297,24 +296,18 @@
        [:column [:button {:class "button"} "+"]]]))
 
 (defn ordinal-drag-single-attribute [value]
-  [:td {:key value
-        :draggable "true"
-        :on-drag #(.preventDefault %)
-        :on-drag-over #(.preventDefault %)
-        :on-drag-enter #(.preventDefault %)
-        :on-drag-leave #(.preventDefault %)
-        :on-drag-end #(.preventDefault %)
-        :on-drop #(.preventDefault %)
-        :on-drag-start 
-          #(.setData (.-dataTransfer %) 
-                     "text/plain" 
-                     value)}
-    [:div {:style 
-           {:width "140px"
-            :white-space "nowrap"
-            :overflow "hidden"
-            :text-overflow "ellipsis"}}
-    value]])
+  [:td (merge
+         {:key value
+          :style {:height "45px"}}
+         (assoc
+           util/drag-default
+           :on-drag-start 
+             #(.setData (.-dataTransfer %) 
+                        "text/plain" 
+                        value)))
+    [:div 
+      util/abbreviate-text
+      [:span {:title value} value]]])
 
 (defn ordinal-drag-values [attribute]
   (let [values @(re-frame/subscribe [::subs/current-distinct attribute])]
@@ -370,14 +363,10 @@
     [:tbody
       [:tr 
         [:td {:key "empty"}
-          [:div {:style {:width "75px"}}]]
+          [:div {:style {:width "75px" :height "40px"}}]]
       (map #(vector :td {:key %}
-                    [:div {:style 
-                            {:width "75px"
-                             :white-space "nowrap"
-                             :overflow "hidden"
-                             :text-overflow "ellipsis"}}
-                          [:button {:class "button"
+                    [:div {:style {:width "75px"}}
+                      [:button {:class "button"
                                     :on-click 
                                      (fn [a] (re-frame/dispatch
                                                [::events/remove-attribute %]))} 
@@ -396,42 +385,39 @@
       [:table {:class "table is-bordered is-scrollable is-unselectable"}
         [:thead
           ;; first header element with input field
-          [:tr [:th [:input {:class "input is-small"
-                             :style {:width "75px"}
-                             :on-change #(re-frame/dispatch
-                                          [::events/relation-name
-                                            (-> % .-target .-value)])
-                             :value @(re-frame/subscribe
-                                      [::subs/get-relation 
-                                        current-attribute])}]]
+          [:tr [:th {:class "is-paddingless"}
+                 [:input {:class "input is-marginless"
+                          :style {:width "99px"
+                                  :border 0
+                                  :box-shadow "none"}
+                          :on-change #(re-frame/dispatch
+                                       [::events/relation-name
+                                         (-> % .-target .-value)])
+                          :placeholder "Relation"
+                          :value @(re-frame/subscribe
+                                   [::subs/get-relation 
+                                     current-attribute])}]]
                ;; remaining headers with drag and drop
                (map (fn [value]
                       (vector 
                         :th {:key value} 
-                        [:div {:draggable "true"
-                               :on-drag #(.preventDefault %)
-                               :on-drag-over #(.preventDefault %)
-                               :on-drag-enter #(.preventDefault %)
-                               :on-drag-leave #(.preventDefault %)
-                               :on-drag-end #(.preventDefault %)
-                               :on-drag-start 
-                                 #(.setData (.-dataTransfer %) 
-                                            "text/plain" 
-                                            value)
-                               :on-drop
-                                 (fn[a] (.preventDefault a)
-                                        (re-frame/dispatch
-                                          [::events/drop-column 
-                                            (vector
-                                              (.getData 
-                                                (.-dataTransfer a) "Text")
-                                              value)]))
-                              :style 
-                               {:width "75px"
-                                :white-space "nowrap"
-                                :overflow "hidden"
-                                :text-overflow "ellipsis"}}
-                        value])) 
+                        [:div (merge
+                                util/abbreviate-text
+                                (assoc
+                                  util/drag-default
+                                  :on-drag-start 
+                                    #(.setData (.-dataTransfer %) 
+                                               "text/plain" 
+                                               value)
+                                  :on-drop
+                                    (fn[a] (.preventDefault a)
+                                           (re-frame/dispatch
+                                             [::events/drop-column 
+                                               (vector
+                                                 (.getData 
+                                                   (.-dataTransfer a) "Text")
+                                                   value)]))))
+                        [:span {:title value} value]])) 
                     attributes)]]
         [:tbody
           ;; all distinct attributes with drag and drops
@@ -439,28 +425,20 @@
             (fn [value]
               [:tr {:key value}
                 [:td {:key value} 
-                  [:div {:draggable "true"
-                         :on-drag #(.preventDefault %)
-                         :on-drag-over #(.preventDefault %)
-                         :on-drag-enter #(.preventDefault %)
-                         :on-drag-leave #(.preventDefault %)
-                         :on-drag-end #(.preventDefault %)
-                         :on-drag-start 
-                           #(.setData (.-dataTransfer %) "text/plain" value)
-                         :on-drop
-                           (fn[a] (.preventDefault a)
-                                  (re-frame/dispatch
-                                    [::events/drop-row 
-                                      (vector
-                                        (.getData (.-dataTransfer a) "text")
-                                        value)]))
-                         :style 
-                           {:width "75px"
-                            :font-weight "bold"
-                            :white-space "nowrap"
-                            :overflow "hidden"
-                            :text-overflow "ellipsis"}}
-                value]]
+                  [:div (merge
+                          util/abbreviate-text
+                          (assoc
+                            util/drag-default
+                            :on-drag-start 
+                              #(.setData (.-dataTransfer %) "text/plain" value)
+                            :on-drop
+                              (fn[a] (.preventDefault a)
+                                     (re-frame/dispatch
+                                       [::events/drop-row 
+                                         (vector
+                                           (.getData (.-dataTransfer a) "text")
+                                           value)]))))
+                [:span {:title value} value]]]
                 ;; the incidence of the current distinct object
                 (map
                   (fn [attribute] 
