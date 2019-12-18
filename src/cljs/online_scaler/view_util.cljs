@@ -8,7 +8,8 @@
      :height "24px"
      :white-space "nowrap"
      :overflow "hidden"
-     :text-overflow "ellipsis"}})
+     :text-overflow "ellipsis"
+     :background-color "white"}})
 
 (def drag-default
   {:draggable "true"

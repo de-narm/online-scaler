@@ -167,6 +167,36 @@
                 [:scaling (keyword current-attribute) :context-view]
                 true))))
 
+(re-frame/reg-event-db
+ ::add-order
+  (fn [db _]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                 [:scaling (keyword current-attribute) :orders]
+                 #(if (nil? %)
+                   [{:relation "<" :pos 0:elements []}]
+                   (conj % {:relation "<" :pos (count %) :elements []}))))))
+
+(re-frame/reg-event-db
+ ::order-add-element
+  (fn [db [_ [element order-pos element-pos]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db
+                 [:scaling (keyword current-attribute) :orders 
+                  order-pos :elements]
+                 #(concat (take element-pos %)
+                          [element]
+                          (drop element-pos %))))))
+
+(re-frame/reg-event-db
+ ::order-remove-element
+  (fn [db [_ [order-pos element]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db
+                 [:scaling (keyword current-attribute) :orders 
+                  order-pos :elements]
+                 #(filter (fn [a] (not (= a element))) %)))))
+
 ;;;-Ordinal-Scaling-Context----------------------------------------------------
 
 (re-frame/reg-event-db

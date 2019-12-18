@@ -283,17 +283,68 @@
 
 ;;;-Scale-Ordinal-Drag---------------------------------------------------------
 
+(defn ordinal-drag-single-element [order element]
+  [:div {:class "level box is-marginless"}
+    [:div (merge 
+            {:class "container has-text-centered"}
+            (assoc util/drag-default
+              :on-drag-start 
+                #(.setData (.-dataTransfer %) 
+                           "text/plain" 
+                           element)
+              :on-drag-leave
+                (fn[a] (.preventDefault a)
+                       (re-frame/dispatch
+                         [::events/order-remove-element 
+                           (vector (:pos order)
+                                   (.getData (.-dataTransfer a) "Text"))]))))
+      element]])
+
+(defn ordinal-drag-single-relation [order pos]
+  [:div {:class "level notification is-marginless is-paddingless"} 
+    [:div (merge 
+            {:class "container has-text-centered"}
+            (assoc util/drag-default
+              :draggable false
+              :on-drop
+                (fn[a] (.preventDefault a)
+                       (re-frame/dispatch
+                         [::events/order-add-element 
+                           (vector
+                             (.getData (.-dataTransfer a) "Text")
+                             (:pos order) 
+                             pos)]))))
+          (:relation order)]])
+
 (defn ordinal-drag-single-order [order]
-  [:div {:class "box"}])
+  [:div {:class "column is-2"}
+    [:div {:class "level"}
+      [:div {:class "select is-fullwidth"}
+        [:select (map #(vector :option {:key (str (:pos order) %)} %) 
+                      ["<" "=" ">"])]]]
+    (let [elements (map 
+                     #(vector ordinal-drag-single-element order %)
+                     (:elements order))
+          drop-fields (map 
+                        #(vector ordinal-drag-single-relation order %)
+                        (range (+ 1 (count (:elements order)))))]
+      (cons (first drop-fields) 
+            (interleave elements (drop 1 drop-fields))))])
 
 (defn ordinal-drag-orders [attribute]
   (let [orders @(re-frame/subscribe [::subs/get-orders attribute])]
-    [:columns
+    [:div {:class "columns" :style {:overflow "auto"
+                                    :scrollbar-x-position "top"}}
       (doall
         (map 
-          #(vector ordinal-drag-single-order (second %))
+          #(vector ordinal-drag-single-order %)
           orders))
-       [:column [:button {:class "button"} "+"]]]))
+       [:div {:class "column"} 
+         [:button {:class "button"
+                   :key "add-one"
+                   :on-click 
+                     #(re-frame/dispatch [::events/add-order nil])}
+                  "+"]]]))
 
 (defn ordinal-drag-single-attribute [value]
   [:td (merge
@@ -302,9 +353,7 @@
          (assoc
            util/drag-default
            :on-drag-start 
-             #(.setData (.-dataTransfer %) 
-                        "text/plain" 
-                        value)))
+             #(.setData (.-dataTransfer %) "text/plain" value)))
     [:div 
       util/abbreviate-text
       [:span {:title value} value]]])
@@ -318,16 +367,14 @@
         [:tbody
           (doall 
             (map
-              #(vector :tr %)
+              #(vector :tr {:key %} %)
               (partition-all 5
                 (map ordinal-drag-single-attribute values))))]]]))
 
 (defn ordinal-drag [attribute]
   [:div
     [ordinal-drag-values attribute]
-    [ordinal-drag-orders]
-    [:br]
-    [:br]
+    [ordinal-drag-orders attribute]
     [:button {:class "button"
               :on-click 
                 #(re-frame/dispatch [::events/switch-to-context nil])}
@@ -438,7 +485,7 @@
                                          (vector
                                            (.getData (.-dataTransfer a) "text")
                                            value)]))))
-                [:span {:title value} value]]]
+                [:span {:title value} [:b value]]]]
                 ;; the incidence of the current distinct object
                 (map
                   (fn [attribute] 

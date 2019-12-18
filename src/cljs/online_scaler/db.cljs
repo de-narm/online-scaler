@@ -36,6 +36,7 @@
               ;;                    :context-view false
               ;;                    ---------Drag------------------------------
               ;;                    :orders [{:relation "<"
+              ;;                              :pos      int ;pos on array
               ;;                              :elements [vals]}]
               ;;                    ---------Context---------------------------
               ;;                    :attributes    [atts]
