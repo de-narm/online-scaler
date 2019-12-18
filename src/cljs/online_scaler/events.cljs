@@ -178,15 +178,33 @@
                    (conj % {:relation "<" :pos (count %) :elements []}))))))
 
 (re-frame/reg-event-db
+ ::remove-order
+  (fn [db [_ order]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) :orders (:pos order)]
+                nil))))
+
+(re-frame/reg-event-db
+ ::set-relation
+  (fn [db [_ [pos relation]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) :orders pos :relation]
+                relation))))
+
+(re-frame/reg-event-db
  ::order-add-element
   (fn [db [_ [element order-pos element-pos]]]
     (let [current-attribute (get-in db [:selection :current-attribute])]
       (update-in db
                  [:scaling (keyword current-attribute) :orders 
                   order-pos :elements]
-                 #(concat (take element-pos %)
-                          [element]
-                          (drop element-pos %))))))
+                 #(if (some #{element} %)
+                      %
+                      (concat (take element-pos %)
+                              [element]
+                              (drop element-pos %)))))))
 
 (re-frame/reg-event-db
  ::order-remove-element

@@ -283,27 +283,37 @@
 
 ;;;-Scale-Ordinal-Drag---------------------------------------------------------
 
+(defn ordinal-drag-remove-button [order]
+  [:div {:class "s-fullwidth container has-text-centered"} 
+    [:br]
+    [:button {:class "button"
+              :key "remove"
+              :on-click 
+                #(re-frame/dispatch [::events/remove-order order])}
+             "-"]])
+
 (defn ordinal-drag-single-element [order element]
   [:div {:class "level box is-marginless"}
     [:div (merge 
-            {:class "container has-text-centered"}
+            {:class "container has-text-centered is-unselectable"}
+            util/abbreviate-text
             (assoc util/drag-default
               :on-drag-start 
                 #(.setData (.-dataTransfer %) 
                            "text/plain" 
                            element)
-              :on-drag-leave
+              :on-drag
                 (fn[a] (.preventDefault a)
                        (re-frame/dispatch
                          [::events/order-remove-element 
                            (vector (:pos order)
                                    (.getData (.-dataTransfer a) "Text"))]))))
-      element]])
+      [:span {:title element} element]]])
 
 (defn ordinal-drag-single-relation [order pos]
   [:div {:class "level notification is-marginless is-paddingless"} 
     [:div (merge 
-            {:class "container has-text-centered"}
+            {:class "container has-text-centered is-unselectable"}
             (assoc util/drag-default
               :draggable false
               :on-drop
@@ -316,20 +326,33 @@
                              pos)]))))
           (:relation order)]])
 
-(defn ordinal-drag-single-order [order]
-  [:div {:class "column is-2"}
-    [:div {:class "level"}
-      [:div {:class "select is-fullwidth"}
-        [:select (map #(vector :option {:key (str (:pos order) %)} %) 
-                      ["<" "=" ">"])]]]
+(defn ordinal-drag-selection [order]
+  [:div {:class "level"}
+    [:div {:class "select is-fullwidth"}
+      [:select {:defaultValue (:relation order)
+                :on-change 
+                 #(re-frame/dispatch 
+                   [::events/set-relation [(:pos order)
+                                           (-> % .-target .-value)]])}
+        (map #(vector :option 
+                      {:key (str (:pos order) %)} 
+                      %) 
+             ["<" "=" ">"])]]])
+
+(defn ordinal-drag-single-order [attribute order]
+  [:div {:class "container"}
+    [ordinal-drag-selection order]
     (let [elements (map 
-                     #(vector ordinal-drag-single-element order %)
+                     #(vector :div {:key (str (:pos order) %)} 
+                                   [ordinal-drag-single-element order %])
                      (:elements order))
           drop-fields (map 
-                        #(vector ordinal-drag-single-relation order %)
+                        #(vector :div {:key %}
+                                      [ordinal-drag-single-relation order %])
                         (range (+ 1 (count (:elements order)))))]
       (cons (first drop-fields) 
-            (interleave elements (drop 1 drop-fields))))])
+            (interleave elements (drop 1 drop-fields))))
+    [ordinal-drag-remove-button order]])
 
 (defn ordinal-drag-orders [attribute]
   (let [orders @(re-frame/subscribe [::subs/get-orders attribute])]
@@ -337,7 +360,8 @@
                                     :scrollbar-x-position "top"}}
       (doall
         (map 
-          #(vector ordinal-drag-single-order %)
+          #(if (some? %) [:div {:key (:pos %) :class "column is-2"} 
+                           [ordinal-drag-single-order attribute %]])
           orders))
        [:div {:class "column"} 
          [:button {:class "button"

@@ -1,0 +1,4 @@
+(some? nil)
+(assoc-in [1 2 3 4 5] [3] nil)
+(assoc-in [1 2 nil 4 5] [3] nil)
+exit
