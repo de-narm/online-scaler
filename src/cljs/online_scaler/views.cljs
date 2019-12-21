@@ -539,62 +539,90 @@
 ;;;-Scale-Numeric-Generate-----------------------------------------------------
 ;;;-Scale-Numeric-Intervals----------------------------------------------------
 
+(defn numeric-single-interval-left [attribute interval]
+  [:div {:class "column is-narrow is-marginless is-paddingless"}
+    [:div {:class "field has-addons"}
+      [:div {:class "control"}
+        [:button 
+          (merge
+            (if (= "(" (:left interval))
+              {:class "button is-marginless"}
+              {:class "button is-marginless has-background-dark
+                       has-text-white"})
+            {:on-click 
+              #(re-frame/dispatch 
+                [::events/swap-bracket-left [attribute interval]])})
+          [:b (:left interval)]]]
+      [:div {:class "control"}
+        [:input {:class "input is-marginless"
+                 :value (:start interval)
+                 :on-change 
+                   #(re-frame/dispatch 
+                     [::events/set-number-start 
+                       [attribute interval (-> % .-target .-value)]])}]]]])
+
+(defn numeric-single-interval-right [attribute interval]
+  [:div {:class "column is-narrow is-marginless is-paddingless"}
+    [:div {:class "field has-addons"}
+      [:div {:class "control"}
+        [:input {:class "input is-marginless"
+                 :value (:end interval)
+                 :on-change
+                   #(re-frame/dispatch 
+                     [::events/set-number-end 
+                       [attribute interval (-> % .-target .-value)]])}]]
+      [:div {:class "control"}
+        [:button 
+          (merge
+            (if (= ")" (:right interval))
+              {:class "button is-marginless"}
+              {:class "button is-marginless has-background-dark 
+                       has-text-white"})
+            {:on-click 
+              #(re-frame/dispatch 
+                [::events/swap-bracket-right [attribute interval]])})
+            [:b (:right interval)]]]]])
+
 (defn numeric-single-interval [attribute interval]
-  [:div {:class "tile is-anchestor"}
+  [:div (merge 
+          {:class "tile is-anchestor"}
+          (assoc util/drag-default
+               :on-drag-start 
+                 #(.setData (.-dataTransfer %) 
+                            "text/plain" 
+                            (str (:left interval) "," (:start interval) ","
+                                 (:end interval) "," (:right interval)))
+               :on-drag (fn[a] (.preventDefault a)
+                          (re-frame/dispatch 
+                            [::events/remove-interval [attribute interval]]))))
     [:div {:class "tile is-child is-8 columns"}
-      [:div {:class "column is-narrow is-marginless is-paddingless"}
-        [:div {:class "field has-addons"}
-          [:div {:class "control"}
-            [:button 
-              (merge
-                (if (= "(" (:left interval))
-                  {:class "button is-marginless"}
-                  {:class "button is-marginless has-background-dark
-                           has-text-white"})
-                {:on-click 
-                  #(re-frame/dispatch 
-                    [::events/swap-bracket-left [attribute interval]])})
-              [:b (:left interval)]]]
-          [:div {:class "control"}
-            [:input {:class "input is-marginless"
-                     :value (:start interval)
-                     :on-change 
-                       #(re-frame/dispatch 
-                         [::events/set-number-start 
-                           [attribute interval (-> % .-target .-value)]])}]]]]
+      [numeric-single-interval-left attribute interval]  
       [:div {:class "column is-narrow"}
         "-"]
-      [:div {:class "column is-narrow is-marginless is-paddingless"}
-        [:div {:class "field has-addons"}
-          [:div {:class "control"}
-            [:input {:class "input is-marginless"
-                     :value (:end interval)
-                     :on-change
-                       #(re-frame/dispatch 
-                         [::events/set-number-end 
-                           [attribute interval (-> % .-target .-value)]])}]]
-          [:div {:class "control"}
-            [:button 
-              (merge
-                (if (= ")" (:right interval))
-                  {:class "button is-marginless"}
-                  {:class "button is-marginless has-background-dark 
-                           has-text-white"})
-                {:on-click 
-                  #(re-frame/dispatch 
-                    [::events/swap-bracket-right [attribute interval]])})
-                [:b (:right interval)]]]]]]
+      [numeric-single-interval-right attribute interval]]
     [:div {:class "tile is-child is-2"}
       [:button {:class "button is-pulled-right"
                 :on-click #(re-frame/dispatch 
                             [::events/remove-interval [attribute interval]])} 
                "-"]]
-    [:div {:class "tile is-child is-2"}
+    [:div {:class "tile is-child is-2"}        
       [:span {:class "icon is-pulled-right"}
         [:i {:class "fas fa-arrows-alt"}]]]])
 
 (defn numeric-single-attribute [attribute]
-  [:div {:class "box"}
+  [:div (merge 
+          (assoc 
+            util/drag-default
+            :on-drag nil
+            :on-drag-start nil
+            :draggable false
+            :on-drop 
+              (fn[a] (.preventDefault a)
+                     (re-frame/dispatch 
+                       [::events/insert-interval 
+                         (vector attribute 
+                                 (.getData (.-dataTransfer a) "Text"))])))
+          {:class "box"})
     [:div {:class "columns"}
       [:div {:class "column"} [:h6 {:class "title is-6"} (:name attribute)]]
       [:div {:class "column"} [:button {:class "button is-pulled-right" 
@@ -612,7 +640,8 @@
                          [numeric-single-interval attribute interval])))
         (:intervals attribute)))
     [:button {:class "button"
-              :on-click #(re-frame/dispatch [::events/add-interval attribute])} 
+              :on-click #(re-frame/dispatch 
+                          [::events/add-interval attribute])} 
              "+"]])
 
 (defn numeric-interval-attribute-button [current-attribute]
@@ -761,12 +790,15 @@
 ;;;-Main-----------------------------------------------------------------------
 
 (defn main-panel []
-  (let [panel (re-frame/subscribe [::subs/panel])]
+  (let [panel @(re-frame/subscribe [::subs/panel])]
     [:div {:class "container"}
-      [header @panel]
-      (case @panel
+      [header panel]
+      (case panel
         "import"  [import-panel]
         "select"  [select-panel]
         "scale"   [scale-panel]
         "export"  [export-panel]
-        (print @panel))]))
+        (print panel))
+      ;; the empty hero is used to allow scrolling past scaling elements
+      [:div {:class "hero is-fullheight"}]]))
+

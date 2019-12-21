@@ -67,11 +67,13 @@
               (apply merge
                 (map 
                   (fn [attribute values]
+                    (let [distinct-values (distinct values)]
                     (hash-map 
                       (keyword attribute)
                       (hash-map :measure  "nominal"
                                 :values   values
-                                :distinct (distinct values))))
+                                :distinct distinct-values
+                                :attributes distinct-values))))
                   (map first attribute-vector)
                   nested-values)))
             (assoc-in [:mv-ctx] {:name   nil
@@ -300,6 +302,20 @@
                    [{:pos 0 :left "(" :start "" :end "" :right ")"}]
                    (conj % {:pos (count %) :left "(" :start nil :end nil 
                             :right ")"}))))))
+
+(re-frame/reg-event-db
+ ::insert-interval
+  (fn [db [_ [attribute intervalstring]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])
+          interval (split intervalstring #",")]
+      (update-in db 
+                 [:scaling (keyword current-attribute) :selected
+                  (:pos attribute) :intervals]
+                 #(conj % {:pos (count %) 
+                           :left (nth interval 0) 
+                           :start (nth interval 1) 
+                           :end (nth interval 2) 
+                           :right (nth interval 3)})))))
 
 (re-frame/reg-event-db
  ::remove-interval
