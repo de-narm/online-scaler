@@ -170,7 +170,7 @@
                                (range (count attributes))))]]]]]))
 
 (defn select-single-attribute [attribute]
-  (let [mouse-pressed @(re-frame/subscribe [::subs/get-tmp])]
+  (let [mouse-pressed @(re-frame/subscribe [::subs/tmp])]
     [:tr (merge
             (if 
               (second attribute)
@@ -337,13 +337,13 @@
         (map #(vector :option 
                       {:key (str (:pos order) %)} 
                       %) 
-             ["<" "=" ">"])]]])
+             ["<" "<=" "=" "=>" ">"])]]])
 
 (defn ordinal-drag-single-order [attribute order]
   [:div {:class "container"}
     [ordinal-drag-selection order]
     (let [elements (map 
-                     #(vector :div {:key (str (:pos order) %)} 
+                     #(vector :div {:key (str (:pos order) % "_ele")} 
                                    [ordinal-drag-single-element order %])
                      (:elements order))
           drop-fields (map 
@@ -355,7 +355,7 @@
     [ordinal-drag-remove-button order]])
 
 (defn ordinal-drag-orders [attribute]
-  (let [orders @(re-frame/subscribe [::subs/get-orders attribute])]
+  (let [orders @(re-frame/subscribe [::subs/orders attribute])]
     [:div {:class "columns" :style {:overflow "auto"
                                     :scrollbar-x-position "top"}}
       (doall
@@ -450,7 +450,7 @@
         values     
          @(re-frame/subscribe [::subs/current-distinct current-attribute])
         incidence
-         @(re-frame/subscribe [::subs/get-incidence current-attribute])]
+         @(re-frame/subscribe [::subs/incidence current-attribute])]
     [:div {:class "table-container"}
       [ordinal-table-buttons attributes]
       [:table {:class "table is-bordered is-scrollable is-unselectable"}
@@ -466,7 +466,7 @@
                                          (-> % .-target .-value)])
                           :placeholder "Relation"
                           :value @(re-frame/subscribe
-                                   [::subs/get-relation 
+                                   [::subs/relation 
                                      current-attribute])}]]
                ;; remaining headers with drag and drop
                (map (fn [value]
@@ -528,10 +528,122 @@
 
 (defn ordinal-scale [current-attribute]
   [:div
-    (if @(re-frame/subscribe [::subs/context-view current-attribute])
-        [:div [ordinal-attribute-form current-attribute]
-              [ordinal-table current-attribute]]
-        [ordinal-drag current-attribute])])
+    [:div {:class "box"}
+      [:h5 {:class "title is-5"} "Scaling"]
+      [ordinal-drag current-attribute]]
+    [:div {:class "box"}
+      [:h5 {:class "title is-5"} "Preview"]
+      [:div [ordinal-attribute-form current-attribute]
+            [ordinal-table current-attribute]]]])
+
+;;;-Scale-Numeric-Generate-----------------------------------------------------
+;;;-Scale-Numeric-Intervals----------------------------------------------------
+
+(defn numeric-single-interval [attribute interval]
+  [:div {:class "tile is-anchestor"}
+    [:div {:class "tile is-child is-8 columns"}
+      [:div {:class "column is-narrow is-marginless is-paddingless"}
+        [:div {:class "field has-addons"}
+          [:div {:class "control"}
+            [:button 
+              (merge
+                (if (= "(" (:left interval))
+                  {:class "button is-marginless"}
+                  {:class "button is-marginless has-background-dark
+                           has-text-white"})
+                {:on-click 
+                  #(re-frame/dispatch 
+                    [::events/swap-bracket-left [attribute interval]])})
+              [:b (:left interval)]]]
+          [:div {:class "control"}
+            [:input {:class "input is-marginless"
+                     :value (:start interval)
+                     :on-change 
+                       #(re-frame/dispatch 
+                         [::events/set-number-start 
+                           [attribute interval (-> % .-target .-value)]])}]]]]
+      [:div {:class "column is-narrow"}
+        "-"]
+      [:div {:class "column is-narrow is-marginless is-paddingless"}
+        [:div {:class "field has-addons"}
+          [:div {:class "control"}
+            [:input {:class "input is-marginless"
+                     :value (:end interval)
+                     :on-change
+                       #(re-frame/dispatch 
+                         [::events/set-number-end 
+                           [attribute interval (-> % .-target .-value)]])}]]
+          [:div {:class "control"}
+            [:button 
+              (merge
+                (if (= ")" (:right interval))
+                  {:class "button is-marginless"}
+                  {:class "button is-marginless has-background-dark 
+                           has-text-white"})
+                {:on-click 
+                  #(re-frame/dispatch 
+                    [::events/swap-bracket-right [attribute interval]])})
+                [:b (:right interval)]]]]]]
+    [:div {:class "tile is-child is-2"}
+      [:button {:class "button is-pulled-right"
+                :on-click #(re-frame/dispatch 
+                            [::events/remove-interval [attribute interval]])} 
+               "-"]]
+    [:div {:class "tile is-child is-2"}
+      [:span {:class "icon is-pulled-right"}
+        [:i {:class "fas fa-arrows-alt"}]]]])
+
+(defn numeric-single-attribute [attribute]
+  [:div {:class "box"}
+    [:div {:class "columns"}
+      [:div {:class "column"} [:h6 {:class "title is-6"} (:name attribute)]]
+      [:div {:class "column"} [:button {:class "button is-pulled-right" 
+                                        :on-click 
+                                          #(re-frame/dispatch
+                                            [::events/remove-interval-attribute 
+                                              attribute])}
+                                "--"]]]
+    (doall
+      (map
+        (fn [interval] 
+          (if (some? interval)
+            (vector :div {:key (str (:pos attribute) "-" 
+                                    (:pos interval))}
+                         [numeric-single-interval attribute interval])))
+        (:intervals attribute)))
+    [:button {:class "button"
+              :on-click #(re-frame/dispatch [::events/add-interval attribute])} 
+             "+"]])
+
+(defn numeric-interval-attribute-button [current-attribute]
+  [:button {:class "button"
+            :on-click #(re-frame/dispatch
+                        [::events/add-interval-attribute nil])}
+    "++"])
+
+(defn numeric-intervals [current-attribute]
+  (let [attributes @(re-frame/subscribe 
+                     [::subs/selected-attributes current-attribute])]
+    [:div {:class "tile is-anchestor is-vertical"}
+      (doall
+        (map
+          (fn [attribute] 
+            (if (some? attribute)
+                (vector :div {:class "tile is-child"
+                              :key (str "selected-" (:pos attribute))} 
+                        [numeric-single-attribute attribute])))
+          attributes))
+      [numeric-interval-attribute-button current-attribute]]))
+
+;;;-Scale-Numeric--------------------------------------------------------------
+
+(defn numeric-scale [current-attribute]
+  [:div
+    [:div {:class "box"}
+      [:h5 {:class "title is-5"} "Scaling"]
+      [numeric-intervals current-attribute]]
+    [:div {:class "box"}
+      [:h5 {:class "title is-5"} "Generate Intervals"]]])
 
 ;;;-Scale-Scaling--------------------------------------------------------------
 
@@ -539,11 +651,10 @@
   (let [measure @(re-frame/subscribe 
                   [::subs/attribute-measure current-attribute])]
     (if (not (= measure "nominal"))
-      [:div {:class "box"}
-        [:h5 {:class "title is-5"} "Scaling"]
         (case measure
           "ordinal"   [ordinal-scale current-attribute]
-          nil)])))
+          "numeric"   [numeric-scale current-attribute]
+          nil))))
 
 ;;;-Scale-Header---------------------------------------------------------------
 

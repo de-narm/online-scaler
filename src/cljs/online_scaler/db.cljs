@@ -3,8 +3,7 @@
 ;;;-Default-Database-----------------------------------------------------------
 
 (def default-db
-  {
-   ;;;-Import------------------------------------------------------------------
+  {;;;-Import------------------------------------------------------------------
    :db {:name  nil ;file name
         :map   nil ;db to replace current one on button press
         }
@@ -42,8 +41,22 @@
               ;;                    :attributes    [atts]
               ;;                    :incidence     {:att {:obj true}}
               ;;                    :relation-name "name" ;given in ctx view
+              ;;                    ---------Numeric---------------------------
+              ;;                    :selected [{:name      "name"
+              ;;                                :pos       int 
+              ;;                                :intervals [{:pos   int
+              ;;                                             :left  "["
+              ;;                                             :start num
+              ;;                                             :end   num
+              ;;                                             :right ")"}]}]
+              ;;                    :generated [{:name      "name"
+              ;;                                 :pos       int
+              ;;                                 :intervals [{:pos   int
+              ;;                                              :left  "["
+              ;;                                              :start num
+              ;;                                              :end   num
+              ;;                                              :right ")"}]}]
               ;;                    }
-
    ;;;-Export------------------------------------------------------------------
    :warning      false
    :context-url  nil ;downloadlink

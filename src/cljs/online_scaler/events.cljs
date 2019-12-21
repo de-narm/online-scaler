@@ -174,7 +174,7 @@
       (update-in db 
                  [:scaling (keyword current-attribute) :orders]
                  #(if (nil? %)
-                   [{:relation "<" :pos 0:elements []}]
+                   [{:relation "<" :pos 0 :elements []}]
                    (conj % {:relation "<" :pos (count %) :elements []}))))))
 
 (re-frame/reg-event-db
@@ -285,6 +285,89 @@
         db
         [:scaling (keyword current) :relation-name]
         relation))))
+
+;;;-Numeric-Scaling-Generate---------------------------------------------------
+;;;-Numeric-Scaling-Intervals--------------------------------------------------
+
+(re-frame/reg-event-db
+ ::add-interval
+  (fn [db [_ attribute]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                 [:scaling (keyword current-attribute) :selected
+                  (:pos attribute) :intervals]
+                 #(if (nil? %)
+                   [{:pos 0 :left "(" :start "" :end "" :right ")"}]
+                   (conj % {:pos (count %) :left "(" :start nil :end nil 
+                            :right ")"}))))))
+
+(re-frame/reg-event-db
+ ::remove-interval
+  (fn [db [_ [attribute interval]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) 
+                 :selected (:pos attribute) :intervals (:pos interval)]
+                nil))))
+
+(re-frame/reg-event-db
+ ::add-interval-attribute
+  (fn [db _]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                 [:scaling (keyword current-attribute) :selected]
+                 #(if (nil? %)
+                   [{:name "Attribute#0" :pos 0 :intervals []}]
+                   (conj % {:name (str "Attribute#" (count %)) 
+                            :pos (count %) 
+                            :intervals []}))))))
+
+(re-frame/reg-event-db
+ ::remove-interval-attribute
+  (fn [db [_ attribute]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) 
+                 :selected (:pos attribute)]
+                nil))))
+
+(re-frame/reg-event-db
+ ::swap-bracket-left
+  (fn [db [_ [attribute interval]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                [:scaling (keyword current-attribute) :selected 
+                 (:pos attribute) :intervals (:pos interval) :left]
+                #(if (= "[" %) "(" "[")))))
+
+(re-frame/reg-event-db
+ ::swap-bracket-right
+  (fn [db [_ [attribute interval]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                [:scaling (keyword current-attribute) :selected 
+                 (:pos attribute) :intervals (:pos interval) :right]
+                #(if (= "]" %) ")" "]")))))
+
+(re-frame/reg-event-db
+ ::set-number-start
+  (fn [db [_ [attribute interval number]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                [:scaling (keyword current-attribute) :selected 
+                 (:pos attribute) :intervals (:pos interval) :start]
+                #(let [replacement (re-find  #"\-?\d*\.?\d*" number)]
+                  (if (nil? replacement) % replacement))))))
+
+(re-frame/reg-event-db
+ ::set-number-end
+  (fn [db [_ [attribute interval number]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (update-in db 
+                [:scaling (keyword current-attribute) :selected 
+                 (:pos attribute) :intervals (:pos interval) :end]
+                #(let [replacement (re-find  #"\-?\d*\.?\d*" number)]
+                  (if (nil? replacement) % replacement))))))
 
 ;;;-Scaling--------------------------------------------------------------------
 

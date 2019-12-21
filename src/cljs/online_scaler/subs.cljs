@@ -56,7 +56,7 @@
     (get-in db [:scaling (keyword attribute) :distinct])))
 
 (re-frame/reg-sub
- ::get-orders
+ ::orders
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :orders])))
 
@@ -68,14 +68,22 @@
     (get-in db [:scaling (keyword attribute) :attributes])))
 
 (re-frame/reg-sub
- ::get-incidence
+ ::incidence
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :incidence])))
 
 (re-frame/reg-sub
- ::get-relation
+ ::relation
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :relation-name])))
+
+;;;-Numeric-Scaling-Generate---------------------------------------------------
+;;;-Numeric-Scaling-Intervals--------------------------------------------------
+
+(re-frame/reg-sub
+ ::selected-attributes
+  (fn [db [_ attribute]]
+    (get-in db [:scaling (keyword attribute) :selected])))
 
 ;;;-Scaling--------------------------------------------------------------------
 
@@ -126,6 +134,6 @@
 ;;;-Util-----------------------------------------------------------------------
 
 (re-frame/reg-sub
- ::get-tmp
+ ::tmp
   (fn [db _]
     (get-in db [:tmp])))
