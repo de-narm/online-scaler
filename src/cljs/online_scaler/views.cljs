@@ -306,8 +306,8 @@
                 (fn[a] (.preventDefault a)
                        (re-frame/dispatch
                          [::events/order-remove-element 
-                           (vector (:pos order)
-                                   (.getData (.-dataTransfer a) "Text"))]))))
+                           [(:pos order)
+                            (.getData (.-dataTransfer a) "Text")]]))))
       [:span {:title element} element]]])
 
 (defn ordinal-drag-single-relation [order pos]
@@ -320,10 +320,9 @@
                 (fn[a] (.preventDefault a)
                        (re-frame/dispatch
                          [::events/order-add-element 
-                           (vector
-                             (.getData (.-dataTransfer a) "Text")
-                             (:pos order) 
-                             pos)]))))
+                           [(.getData (.-dataTransfer a) "Text")
+                            (:pos order) 
+                            pos]]))))
           (:relation order)]])
 
 (defn ordinal-drag-selection [order]
@@ -420,7 +419,7 @@
                :type  "text" 
                :placeholder "New Attribute Name"}]]
     [:div {:class "control"}
-      [:button {:class "button is-info"
+      [:button {:class "button"
                 :type  "button"
                 :on-click #(re-frame/dispatch
                             [::events/add-new-attribute 
@@ -484,10 +483,9 @@
                                     (fn[a] (.preventDefault a)
                                            (re-frame/dispatch
                                              [::events/drop-column 
-                                               (vector
-                                                 (.getData 
+                                               [(.getData 
                                                    (.-dataTransfer a) "Text")
-                                                   value)]))))
+                                                value]]))))
                         [:span {:title value} value]])) 
                     attributes)]]
         [:tbody
@@ -506,9 +504,8 @@
                               (fn[a] (.preventDefault a)
                                      (re-frame/dispatch
                                        [::events/drop-row 
-                                         (vector
-                                           (.getData (.-dataTransfer a) "text")
-                                           value)]))))
+                                         [(.getData (.-dataTransfer a) "text")
+                                          value]]))))
                 [:span {:title value} [:b value]]]]
                 ;; the incidence of the current distinct object
                 (map
@@ -517,7 +514,7 @@
                                 :key attribute
                                 :on-click #(re-frame/dispatch 
                                             [::events/swap-incidence 
-                                              (vector attribute value)])}
+                                              [attribute value]])}
                                (if (get-in incidence [(keyword attribute) 
                                                       (keyword value)]) 
                                    "X" )))
@@ -536,10 +533,9 @@
       [:div [ordinal-attribute-form current-attribute]
             [ordinal-table current-attribute]]]])
 
-;;;-Scale-Numeric-Generate-----------------------------------------------------
-;;;-Scale-Numeric-Intervals----------------------------------------------------
+;;;-Scale-Numeric--------------------------------------------------------------
 
-(defn numeric-single-interval-left [attribute interval]
+(defn numeric-single-interval-left [attribute interval listkey]
   [:div {:class "column is-narrow is-marginless is-paddingless"}
     [:div {:class "field has-addons"}
       [:div {:class "control"}
@@ -551,7 +547,7 @@
                        has-text-white"})
             {:on-click 
               #(re-frame/dispatch 
-                [::events/swap-bracket-left [attribute interval]])})
+                [::events/swap-bracket-left [attribute interval listkey]])})
           [:b (:left interval)]]]
       [:div {:class "control"}
         [:input {:class "input is-marginless"
@@ -559,9 +555,12 @@
                  :on-change 
                    #(re-frame/dispatch 
                      [::events/set-number-start 
-                       [attribute interval (-> % .-target .-value)]])}]]]])
+                       [attribute 
+                        interval 
+                        (-> % .-target .-value)
+                        listkey]])}]]]])
 
-(defn numeric-single-interval-right [attribute interval]
+(defn numeric-single-interval-right [attribute interval listkey]
   [:div {:class "column is-narrow is-marginless is-paddingless"}
     [:div {:class "field has-addons"}
       [:div {:class "control"}
@@ -570,7 +569,10 @@
                  :on-change
                    #(re-frame/dispatch 
                      [::events/set-number-end 
-                       [attribute interval (-> % .-target .-value)]])}]]
+                       [attribute 
+                        interval 
+                        (-> % .-target .-value) 
+                        listkey]])}]]
       [:div {:class "control"}
         [:button 
           (merge
@@ -580,10 +582,10 @@
                        has-text-white"})
             {:on-click 
               #(re-frame/dispatch 
-                [::events/swap-bracket-right [attribute interval]])})
+                [::events/swap-bracket-right [attribute interval listkey]])})
             [:b (:right interval)]]]]])
 
-(defn numeric-single-interval [attribute interval]
+(defn numeric-single-interval [attribute interval listkey]
   [:div (merge 
           {:class "tile is-anchestor"}
           (assoc util/drag-default
@@ -594,25 +596,28 @@
                                  (:end interval) "," (:right interval)))
                :on-drag (fn[a] (.preventDefault a)
                           (re-frame/dispatch 
-                            [::events/remove-interval [attribute interval]]))))
+                            [::events/remove-interval 
+                              [attribute interval listkey]]))))
     [:div {:class "tile is-child is-8 columns"}
-      [numeric-single-interval-left attribute interval]  
+      [numeric-single-interval-left attribute interval listkey]  
       [:div {:class "column is-narrow"}
         "-"]
-      [numeric-single-interval-right attribute interval]]
+      [numeric-single-interval-right attribute interval listkey]]
     [:div {:class "tile is-child is-2"}
       [:button {:class "button is-pulled-right"
                 :on-click #(re-frame/dispatch 
-                            [::events/remove-interval [attribute interval]])} 
+                            [::events/remove-interval 
+                              [attribute interval listkey]])} 
                "-"]]
     [:div {:class "tile is-child is-2"}        
       [:span {:class "icon is-pulled-right"}
         [:i {:class "fas fa-arrows-alt"}]]]])
 
-(defn numeric-single-attribute [attribute]
+(defn numeric-single-attribute [attribute listkey]
   [:div (merge 
           (assoc 
             util/drag-default
+            ;needed to make the nested divs draggable
             :on-drag nil
             :on-drag-start nil
             :draggable false
@@ -620,39 +625,58 @@
               (fn[a] (.preventDefault a)
                      (re-frame/dispatch 
                        [::events/insert-interval 
-                         (vector attribute 
-                                 (.getData (.-dataTransfer a) "Text"))])))
+                         [attribute 
+                          (.getData (.-dataTransfer a) "Text")
+                          listkey]])))
           {:class "box"})
     [:div {:class "columns"}
-      [:div {:class "column"} [:h6 {:class "title is-6"} (:name attribute)]]
+      [:div {:class "column"} 
+        [:input {:class "input is-marginless"
+                 :style {:width "150px"
+                         :border 0
+                         :box-shadow "none"
+                         :font-weight "bold"}
+                 :on-change #(re-frame/dispatch
+                              [::events/set-interval-attribute-name
+                                [attribute
+                                 (-> % .-target .-value)
+                                 listkey]])
+                 :placeholder "Null"
+                 :value (:name attribute)}]
+        (if @(re-frame/subscribe 
+                  [::subs/multiple-names [(:name attribute) listkey]])
+            [:span {:class "icon is-medium has-text-warning"
+                    :title "Name is not unique!"} 
+              [:i {:class "fas fa-lg fa-exclamation-triangle"}]])]
       [:div {:class "column"} [:button {:class "button is-pulled-right" 
                                         :on-click 
                                           #(re-frame/dispatch
                                             [::events/remove-interval-attribute 
-                                              attribute])}
+                                              [attribute listkey]])}
                                 "--"]]]
     (doall
       (map
         (fn [interval] 
           (if (some? interval)
-            (vector :div {:key (str (:pos attribute) "-" 
-                                    (:pos interval))}
-                         [numeric-single-interval attribute interval])))
+            (vector 
+              :div {:key (str (:pos attribute) "-" 
+                              (:pos interval))}
+              [numeric-single-interval attribute interval listkey])))
         (:intervals attribute)))
     [:button {:class "button"
               :on-click #(re-frame/dispatch 
-                          [::events/add-interval attribute])} 
+                          [::events/add-interval [attribute listkey]])} 
              "+"]])
 
-(defn numeric-interval-attribute-button [current-attribute]
+(defn numeric-interval-attribute-button [current-attribute listkey] 
   [:button {:class "button"
             :on-click #(re-frame/dispatch
-                        [::events/add-interval-attribute nil])}
+                        [::events/add-interval-attribute listkey])}
     "++"])
 
-(defn numeric-intervals [current-attribute]
+(defn numeric-intervals [current-attribute listkey]
   (let [attributes @(re-frame/subscribe 
-                     [::subs/selected-attributes current-attribute])]
+                     [::subs/selected-attributes [current-attribute listkey]])]
     [:div {:class "tile is-anchestor is-vertical"}
       (doall
         (map
@@ -660,9 +684,9 @@
             (if (some? attribute)
                 (vector :div {:class "tile is-child"
                               :key (str "selected-" (:pos attribute))} 
-                        [numeric-single-attribute attribute])))
+                        [numeric-single-attribute attribute listkey])))
           attributes))
-      [numeric-interval-attribute-button current-attribute]]))
+      [numeric-interval-attribute-button current-attribute listkey]]))
 
 ;;;-Scale-Numeric--------------------------------------------------------------
 
@@ -670,9 +694,10 @@
   [:div
     [:div {:class "box"}
       [:h5 {:class "title is-5"} "Scaling"]
-      [numeric-intervals current-attribute]]
+      [numeric-intervals current-attribute :selected]]
     [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Generate Intervals"]]])
+      [:h5 {:class "title is-5"} "Generate Intervals"]
+      [numeric-intervals current-attribute :generated]]])
 
 ;;;-Scale-Scaling--------------------------------------------------------------
 

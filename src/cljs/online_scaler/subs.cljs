@@ -77,13 +77,21 @@
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :relation-name])))
 
-;;;-Numeric-Scaling-Generate---------------------------------------------------
-;;;-Numeric-Scaling-Intervals--------------------------------------------------
+;;;-Numeric-Scaling------------------------------------------------------------
 
 (re-frame/reg-sub
  ::selected-attributes
-  (fn [db [_ attribute]]
-    (get-in db [:scaling (keyword attribute) :selected])))
+  (fn [db [_ [attribute listkey]]]
+    (get-in db [:scaling (keyword attribute) listkey])))
+
+(re-frame/reg-sub
+ ::multiple-names
+  (fn [db [_ [namestring listkey]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])
+          attributes (get-in db 
+                             [:scaling (keyword current-attribute) listkey])
+          names      (map :name attributes)]
+      (if (= 1 (count (filter #{namestring} names))) false true))))
 
 ;;;-Scaling--------------------------------------------------------------------
 
