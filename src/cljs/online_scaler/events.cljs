@@ -67,11 +67,18 @@
               (apply merge
                 (map 
                   (fn [attribute values]
-                    (let [distinct-values (distinct values)]
+                    (let [distinct-values (distinct values)
+                          numerical-bool 
+                            (every? 
+                              identity
+                              (map
+                                #(re-matches #"\"?\-?\d*\.?\d*\"?" %)
+                                distinct-values))]
                     (hash-map 
                       (keyword attribute)
                       (hash-map :measure  "nominal"
                                 :values   values
+                                :numerical numerical-bool
                                 :distinct distinct-values
                                 :attributes distinct-values))))
                   (map first attribute-vector)
@@ -392,6 +399,20 @@
                  (:pos attribute) :intervals (:pos interval) :end]
                 #(let [replacement (re-find  #"\-?\d*\.?\d*" number)]
                   (if (nil? replacement) % replacement))))))
+
+(re-frame/reg-event-fx
+ ::select-attribute
+  (fn [cofx [_ attribute]]
+    {:dispatch [::remove-interval-attribute [attribute :generated]]
+     :db (let [db                (:db cofx)
+               current-attribute (get-in db [:selection :current-attribute])]
+           (update-in db 
+                      [:scaling (keyword current-attribute) :selected]
+                      #(if (nil? %)
+                        [{:name "Attribute#0" :pos 0 :intervals []}]
+                        (conj % {:name (str "Attribute#" (count %)) 
+                                 :pos (count %) 
+                                 :intervals (:intervals attribute)}))))}))
 
 ;;;-Scaling--------------------------------------------------------------------
 

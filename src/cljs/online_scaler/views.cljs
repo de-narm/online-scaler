@@ -4,7 +4,8 @@
    [re-frame.core :as re-frame]
    [online-scaler.view-util :as util]
    [online-scaler.events :as events]
-   [online-scaler.subs :as subs]))
+   [online-scaler.subs :as subs]
+   [goog.string :as gstring]))
 
 ;;;-Header---------------------------------------------------------------------
 
@@ -323,7 +324,12 @@
                            [(.getData (.-dataTransfer a) "Text")
                             (:pos order) 
                             pos]]))))
-          (:relation order)]])
+          [:div {:class "is-size-4"
+                 :style {:transform "rotate(90deg)"}}
+                (case (:relation order)
+                  "<=" (gstring/unescapeEntities "&le;")
+                  ">=" (gstring/unescapeEntities "&ge;")
+                  (:relation order))]]])
 
 (defn ordinal-drag-selection [order]
   [:div {:class "level"}
@@ -526,7 +532,7 @@
 (defn ordinal-scale [current-attribute]
   [:div
     [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Scaling"]
+      [:h5 {:class "title is-5"} "Ordinal Scaling"]
       [ordinal-drag current-attribute]]
     [:div {:class "box"}
       [:h5 {:class "title is-5"} "Preview"]
@@ -534,6 +540,23 @@
             [ordinal-table current-attribute]]]])
 
 ;;;-Scale-Numeric--------------------------------------------------------------
+
+(defn numeric-attribute-select-button [attribute]
+  [:button {:class "button is-pulled-right"
+            :on-click #(re-frame/dispatch
+                        [::events/select-attribute attribute])
+            :style {:width "160px"}} 
+           "select Attribute"])
+
+(defn numeric-attribute-select-all-button [attributes]
+  [:button {:class "button is-fullwidth"
+            :on-click 
+            #(doall
+              (map
+                (fn [attribute] (re-frame/dispatch
+                                  [::events/select-attribute attribute]))
+                (filter (fn [a](some? a)) attributes)))} 
+           "select all Attributes"])
 
 (defn numeric-single-interval-left [attribute interval listkey]
   [:div {:class "column is-narrow is-marginless is-paddingless"}
@@ -631,11 +654,10 @@
           {:class "box"})
     [:div {:class "columns"}
       [:div {:class "column"} 
-        [:input {:class "input is-marginless"
+        [:input {:class "input is-marginless has-text-weight-bold"
                  :style {:width "150px"
                          :border 0
-                         :box-shadow "none"
-                         :font-weight "bold"}
+                         :box-shadow "none"}
                  :on-change #(re-frame/dispatch
                               [::events/set-interval-attribute-name
                                 [attribute
@@ -652,8 +674,9 @@
                                         :on-click 
                                           #(re-frame/dispatch
                                             [::events/remove-interval-attribute 
-                                              [attribute listkey]])}
-                                "--"]]]
+                                              [attribute listkey]])
+                                        :style {:width "160px"}} 
+                                "remove Attribute"]]]
     (doall
       (map
         (fn [interval] 
@@ -666,13 +689,15 @@
     [:button {:class "button"
               :on-click #(re-frame/dispatch 
                           [::events/add-interval [attribute listkey]])} 
-             "+"]])
+             "+"]
+    (if (= listkey :generated)
+        [numeric-attribute-select-button attribute])])
 
 (defn numeric-interval-attribute-button [current-attribute listkey] 
-  [:button {:class "button"
+  [:button {:class "button is-fullwidth"
             :on-click #(re-frame/dispatch
                         [::events/add-interval-attribute listkey])}
-    "++"])
+    "new Attribute"])
 
 (defn numeric-intervals [current-attribute listkey]
   (let [attributes @(re-frame/subscribe 
@@ -686,14 +711,19 @@
                               :key (str "selected-" (:pos attribute))} 
                         [numeric-single-attribute attribute listkey])))
           attributes))
-      [numeric-interval-attribute-button current-attribute listkey]]))
+      [:div {:class "columns"}
+        [:div {:class "column"} 
+          [numeric-interval-attribute-button current-attribute listkey]]
+        (if (= listkey :generated)
+          [:div {:class "column"}
+            [numeric-attribute-select-all-button attributes]])]]))
 
 ;;;-Scale-Numeric--------------------------------------------------------------
 
 (defn numeric-scale [current-attribute]
   [:div
     [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Scaling"]
+      [:h5 {:class "title is-5"} "Selected Intervals"]
       [numeric-intervals current-attribute :selected]]
     [:div {:class "box"}
       [:h5 {:class "title is-5"} "Generate Intervals"]
@@ -713,8 +743,10 @@
 ;;;-Scale-Header---------------------------------------------------------------
 
 (defn scale-measurement-radio [current-attribute]
-  (let [measure (re-frame/subscribe 
-                  [::subs/attribute-measure current-attribute])]
+  (let [measure @(re-frame/subscribe 
+                  [::subs/attribute-measure current-attribute])
+        numerical-bool @(re-frame/subscribe 
+                         [::subs/attribute-numerical current-attribute])]
     [:div {:class "container is-fullwidth is-unselectable"}
       [:table {:class "table is-fullwidth is-hoverable"}
         [:thead
@@ -724,11 +756,15 @@
           (doall 
             (map 
               #(vector
-                :tr (merge 
-                      (if (= @measure %) {:class "is-selected"} {})
-                      {:on-click (fn [_] (re-frame/dispatch
+                :tr (if (and (= "numeric" %)
+                             (not numerical-bool))
+                      {:key %
+                       :class "has-background-grey-lighter"}
+                      (merge 
+                        (if (= measure %) {:class "is-selected"} {})
+                        {:on-click (fn [_] (re-frame/dispatch
                                            [::events/change-measure %]))
-                       :key %})
+                        :key %}))
                   [:td (capitalize %)])
               ["nominal" "ordinal" "numeric"]))]]]))
 

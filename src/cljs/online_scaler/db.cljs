@@ -25,11 +25,13 @@
                }
    :scaling   nil ;initialized with map of maps
               ;; example element
-              ;; {:attribute-name  {:measure "nominal"
+              ;; {:attribute-name  {:measure   "nominal"
+              ;;                    :numerical false  ;true == dom only numbers
               ;;                    :values    [vals] ;ordered values 
               ;;                    :distinct  [vals] ;distinct values
               ;;                    }
-              ;;  :other-attribute {:measure "ordinal"
+              ;;  :other-attribute {:measure      "ordinal"
+              ;;                    :numerical    false
               ;;                    :values       [vals]
               ;;                    :distinct     [vals]
               ;;                    :context-view false
@@ -41,6 +43,12 @@
               ;;                    :attributes    [atts]
               ;;                    :incidence     {:att {:obj true}}
               ;;                    :relation-name "name" ;given in ctx view
+              ;;                    }
+              ;;  :other-attribute {:measure      "numerical"
+              ;;                    :numerical    true
+              ;;                    :values       [vals]
+              ;;                    :distinct     [vals]
+              ;;                    :context-view false
               ;;                    ---------Numeric---------------------------
               ;;                    :selected [{:name      "name"
               ;;                                :pos       int 
