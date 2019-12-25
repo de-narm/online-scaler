@@ -72,7 +72,7 @@
                             (every? 
                               identity
                               (map
-                                #(re-matches #"\"?\-?\d*\.?\d*\"?" %)
+                                #(re-matches #"\-?\d*\.?\d*" %)
                                 distinct-values))]
                     (hash-map 
                       (keyword attribute)
@@ -413,6 +413,49 @@
                         (conj % {:name (str "Attribute#" (count %)) 
                                  :pos (count %) 
                                  :intervals (:intervals attribute)}))))}))
+
+;;;-Numeric-Scaling-Interval-Generation----------------------------------------
+
+(re-frame/reg-event-db
+ ::generate-intervals
+  (fn [db [_ [numberstring method]]]
+    (let [current-attribute (get-in db [:selection :current-attribute])
+          number            (read-string numberstring)
+          sorted            (sort < 
+                                  (map read-string
+                                       (get-in db [:scaling
+                                                  (keyword current-attribute)
+                                                  :distinct])))
+          stepsize          (if (= method "equal length")
+                                (/ (- (last sorted)
+                                      (first sorted))
+                                   (+ number 1))
+                                (/ (count sorted) (+ number 1)))
+          divider           (concat 
+                              (map
+                                #(if (= method "equal length")
+                                     (+ (first sorted) (* % stepsize))
+                                     (first (drop (* % stepsize) sorted)))
+                                (range number))
+                              (list (last sorted)))
+          intervals         (mapv
+                              (fn [a b pos] 
+                                {:pos       pos
+                                 :name      (str "Attribute#" pos)
+                                 :intervals [{:pos   0
+                                              :left  "["
+                                              :start a
+                                              :end   b
+                                              :right ")"}]}) 
+                              divider
+                              (drop 1 divider)
+                              (range number))]
+                              (print sorted)
+          (assoc-in db 
+                    [:scaling (keyword current-attribute) :generated]
+                    ;last bracket should include last element
+                    (assoc-in intervals [(- number 1) :intervals 0 :right] 
+                                         "]")))))
 
 ;;;-Scaling--------------------------------------------------------------------
 

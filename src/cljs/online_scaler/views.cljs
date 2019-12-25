@@ -541,6 +541,42 @@
 
 ;;;-Scale-Numeric--------------------------------------------------------------
 
+(defn numeric-generate-attributes [current-attribute]
+  [:div {:class "tile is-anchestor is-vertical"}
+    [:div {:class "tile is-parent has-text-weight-bold 
+                   is-marginless is-paddingless"}
+      [:div {:class "is-marginless is-paddingless"
+             :style {:width "200px"}}
+           "Number of intervals:"]
+      [:div {:class "is-marginless is-paddingless"} 
+           "Type:"]]
+    [:div {:class "tile is-parent field has-addons 
+                   is-marginless is-paddingless"}
+      [:div {:class "control"}
+        [:input {:class "input"
+                 :id    "interval-input"    
+                 :style {:width "200px"}}]]
+      [:div {:class "control"}
+        [:div {:class "select"}
+          [:select {:id "interval-select"}
+            [:option "equal length"]
+            [:option "equally distributed"]]]]
+      [:div {:class "control"}
+         [:button {:class "button"
+                   :on-click 
+                     #(re-frame/dispatch
+                       [::events/generate-intervals
+                         (vector
+                          (.-value (. js/document 
+                                         getElementById 
+                                         "interval-input")) 
+                          (.-value (. js/document 
+                                         getElementById 
+                                         "interval-select")))])} 
+                  "Generate"]]]
+      [:div {:class "tile is-parent"}]])
+
+
 (defn numeric-attribute-select-button [attribute]
   [:button {:class "button is-pulled-right"
             :on-click #(re-frame/dispatch
@@ -727,6 +763,7 @@
       [numeric-intervals current-attribute :selected]]
     [:div {:class "box"}
       [:h5 {:class "title is-5"} "Generate Intervals"]
+      [numeric-generate-attributes current-attribute]
       [numeric-intervals current-attribute :generated]]])
 
 ;;;-Scale-Scaling--------------------------------------------------------------
