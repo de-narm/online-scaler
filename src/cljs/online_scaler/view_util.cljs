@@ -2,6 +2,7 @@
 
 ;;;
 
+;; used for all tables
 (def abbreviate-text
   {:style 
     {:width "75px"

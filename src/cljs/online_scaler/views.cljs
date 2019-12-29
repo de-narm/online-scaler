@@ -294,22 +294,27 @@
              "-"]])
 
 (defn ordinal-drag-single-element [order element]
-  [:div {:class "level box is-marginless"}
-    [:div (merge 
-            {:class "container has-text-centered is-unselectable"}
-            util/abbreviate-text
-            (assoc util/drag-default
-              :on-drag-start 
-                #(.setData (.-dataTransfer %) 
-                           "text/plain" 
-                           element)
-              :on-drag
-                (fn[a] (.preventDefault a)
-                       (re-frame/dispatch
-                         [::events/order-remove-element 
-                           [(:pos order)
-                            (.getData (.-dataTransfer a) "Text")]]))))
-      [:span {:title element} element]]])
+  [:span {:title element}
+    [:div {:class "level box is-marginless"}
+      [:div (merge 
+              {:class "container has-text-centered is-unselectable"
+               :style 
+                {:white-space "nowrap"
+                 :overflow "hidden"
+                 :text-overflow "ellipsis"
+                 :z-index 10}}
+              (assoc util/drag-default
+                :on-drag-start 
+                  #(.setData (.-dataTransfer %) 
+                             "text/plain" 
+                             element)
+                :on-drag
+                  (fn[a] (.preventDefault a)
+                         (re-frame/dispatch
+                           [::events/order-remove-element 
+                             [(:pos order)
+                              (.getData (.-dataTransfer a) "Text")]]))))
+        element]]])
 
 (defn ordinal-drag-single-relation [order pos]
   [:div {:class "level notification is-marginless is-paddingless"} 
@@ -325,7 +330,7 @@
                             (:pos order) 
                             pos]]))))
           [:div {:class "is-size-4"
-                 :style {:transform "rotate(90deg)"}}
+                 :style {:transform "rotate(270deg)"}}
                 (case (:relation order)
                   "<=" (gstring/unescapeEntities "&le;")
                   ">=" (gstring/unescapeEntities "&ge;")
@@ -342,7 +347,7 @@
         (map #(vector :option 
                       {:key (str (:pos order) %)} 
                       %) 
-             ["<" "<=" "=" "=>" ">"])]]])
+             ["<" "<=" "=" ">=" ">"])]]])
 
 (defn ordinal-drag-single-order [attribute order]
   [:div {:class "container"}
@@ -383,8 +388,7 @@
            util/drag-default
            :on-drag-start 
              #(.setData (.-dataTransfer %) "text/plain" value)))
-    [:div 
-      util/abbreviate-text
+    [:div util/abbreviate-text
       [:span {:title value} value]]])
 
 (defn ordinal-drag-values [attribute]
@@ -530,14 +534,20 @@
 ;;;-Scale-Ordinal--------------------------------------------------------------
 
 (defn ordinal-scale [current-attribute]
-  [:div
-    [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Ordinal Scaling"]
-      [ordinal-drag current-attribute]]
-    [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Preview"]
-      [:div [ordinal-attribute-form current-attribute]
-            [ordinal-table current-attribute]]]])
+  (let [is-context @(re-frame/subscribe 
+                     [::subs/context-view current-attribute])]
+    [:div
+      [:div {:class "box"}
+        [:h5 {:class "title is-5"} "Ordinal Scaling"]
+        (if is-context
+          [:div [ordinal-attribute-form current-attribute]
+                [ordinal-table current-attribute]
+                [:button {:class "button"
+                          :on-click 
+                            #(re-frame/dispatch 
+                              [::events/switch-to-drag nil])}
+                         "Reset"]]
+          [ordinal-drag current-attribute])]]))
 
 ;;;-Scale-Numeric--------------------------------------------------------------
 

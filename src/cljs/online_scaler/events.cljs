@@ -76,11 +76,12 @@
                                 distinct-values))]
                     (hash-map 
                       (keyword attribute)
-                      (hash-map :measure  "nominal"
-                                :values   values
-                                :numerical numerical-bool
-                                :distinct distinct-values
-                                :attributes distinct-values))))
+                      (hash-map :measure      "nominal"
+                                :values       values
+                                :numerical    numerical-bool
+                                :context-view false
+                                :distinct     distinct-values
+                                :attributes   distinct-values))))
                   (map first attribute-vector)
                   nested-values)))
             (assoc-in [:mv-ctx] {:name   nil
@@ -169,12 +170,79 @@
 ;;;-Ordinal-Scaling-Drag-------------------------------------------------------
 
 (re-frame/reg-event-db
- ::switch-to-context
+ ::generate-context
   (fn [db _]
-    (let [current-attribute (get-in db [:selection :current-attribute])]
-      (assoc-in db 
-                [:scaling (keyword current-attribute) :context-view]
-                true))))
+    (let [current-attribute (get-in db [:selection :current-attribute])
+          distinct-values   (get-in db [:scaling (keyword current-attribute)
+                                        :distinct])
+          orders            (get-in db [:scaling (keyword current-attribute) 
+                                        :orders])]
+          ;;TODO in scaling datei schieben, equivalenz rausziehen
+      (assoc-in db
+                [:scaling (keyword current-attribute) :incidence]
+                (loop [incidence {}
+                       remaining distinct-values]
+                  (if (empty? remaining)
+                      incidence
+                      (let [value    (first remaining)
+                            set-true  
+                              (apply concat
+                                (map
+                                  (fn [order]
+                                    (let [elements (:elements order)]
+                                    (if (some #{value} elements)
+                                    (case (:relation order)
+                                      "<"  (take (.indexOf elements value) 
+                                                 elements)
+                                      ">"  (drop (+ 1
+                                                    (.indexOf elements value))
+                                                 elements)
+                                      ">=" (drop (.indexOf elements value) 
+                                                 elements)
+                                      "<=" (take (+ 1 
+                                                    (.indexOf elements value))
+                                                 elements))
+                                    (list))))
+                                  orders))
+                            set-false 
+                              (apply concat
+                                (map
+                                  (fn [order]
+                                    (let [elements (:elements order)]
+                                    (if (some #{value} elements)
+                                    (case (:relation order)
+                                      "<"  (drop (.indexOf elements value) 
+                                                 elements)
+                                      ">"  (take (+ 1
+                                                    (.indexOf elements value))
+                                                 elements)
+                                      ">=" (take (.indexOf elements value)
+                                                 elements)
+                                      "<=" (drop (+ 1
+                                                    (.indexOf elements value))
+                                                 elements))
+                                      (list))))
+                                  orders))
+                             sub-incidence
+                              (apply merge
+                                (map 
+                                  #(hash-map (keyword %) true)
+                                  (clojure.set/difference (set set-true) 
+                                                          (set set-false))))]
+                                  (print sub-incidence)
+                        (recur (merge incidence 
+                                      (hash-map (keyword value) sub-incidence))
+                               (drop 1 remaining)))))))))
+
+(re-frame/reg-event-fx
+ ::switch-to-context
+  (fn [cofx _]
+    {:dispatch [::generate-context nil]
+     :db (let [db (:db cofx)
+               current-attribute (get-in db [:selection :current-attribute])]
+           (assoc-in db 
+                     [:scaling (keyword current-attribute) :context-view]
+                     true))}))
 
 (re-frame/reg-event-db
  ::add-order
@@ -183,8 +251,8 @@
       (update-in db 
                  [:scaling (keyword current-attribute) :orders]
                  #(if (nil? %)
-                   [{:relation "<" :pos 0 :elements []}]
-                   (conj % {:relation "<" :pos (count %) :elements []}))))))
+                   [{:relation "<=" :pos 0 :elements []}]
+                   (conj % {:relation "<=" :pos (count %) :elements []}))))))
 
 (re-frame/reg-event-db
  ::remove-order
@@ -225,6 +293,14 @@
                  #(filter (fn [a] (not (= a element))) %)))))
 
 ;;;-Ordinal-Scaling-Context----------------------------------------------------
+
+(re-frame/reg-event-db
+ ::switch-to-drag
+  (fn [db _]
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) :context-view]
+                false))))
 
 (re-frame/reg-event-db
  ::add-new-attribute
@@ -450,7 +526,6 @@
                               divider
                               (drop 1 divider)
                               (range number))]
-                              (print sorted)
           (assoc-in db 
                     [:scaling (keyword current-attribute) :generated]
                     ;last bracket should include last element
