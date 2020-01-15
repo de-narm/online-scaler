@@ -44,7 +44,7 @@
               ;;                    :incidence     {:att {:obj true}}
               ;;                    :relation-name "name" ;given in ctx view
               ;;                    }
-              ;;  :other-attribute {:measure      "numerical"
+              ;;  :other-attribute {:measure      "numeric"
               ;;                    :numerical    true
               ;;                    :values       [vals]
               ;;                    :distinct     [vals]

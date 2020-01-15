@@ -38,6 +38,8 @@
             (if (empty? remaining)
                 incidence
                 (let [value (first remaining)
+                      ;for the given value get all true implications from the
+                      ;orders
                       set-true  
                         (apply concat
                           (map
@@ -53,6 +55,7 @@
                                            elements))
                               (list))))
                             orders))
+                      ;and all false implications
                       set-false 
                         (apply concat
                           (map
@@ -68,6 +71,7 @@
                                            elements))
                                 (list))))
                             orders))
+                       ;the difference gets actually marked as true
                        sub-incidence
                         (apply merge
                           (map 
@@ -102,6 +106,39 @@
         values
         matrix))))
 
+;;;-Numeric-Scale--------------------------------------------------------------
+
+(defn numeric-scale
+  "Builds a map with distinct values and their corresponding incidence."
+  [scaling]
+  (let [values     (:distinct scaling)
+        attributes (:selected scaling)
+        matrix     (map
+                     (fn [value]
+                       (map 
+                         (fn [attribute] 
+                           (if  (every? identity 
+                                  (map 
+                                    (fn [interval] 
+                                       (and 
+                                         ((if (= "[" (:left interval)) >= >) 
+                                            value 
+                                            (:start interval)) 
+                                         ((if (= "]" (:right interval)) <= <)
+                                            value
+                                            (:end interval))))
+                                    (filter identity (:intervals attribute))))
+                               "X"
+                               "."))
+                       attributes))
+                     values)]
+    ;; build map with {:value matrix-row}
+    (apply merge
+      (map
+        (fn [value row] (hash-map value row))
+        values
+        matrix))))
+
 ;;;-Scaling--------------------------------------------------------------------
 
 (defn select-function
@@ -110,6 +147,7 @@
   (case (:measure scaling)
     "nominal" (nominal-scale scaling)
     "ordinal" (ordinal-scale (to-context scaling))
+    "numeric" (numeric-scale scaling)
     nil))
 
 (defn apply-measure
@@ -142,6 +180,9 @@
            "ordinal" (if (:context-view data) 
                          (:attributes data) 
                          (:distinct data))
+           "numeric" (map :name 
+                          (filter identity 
+                                  (:selected data)))
            nil)))
 		attributes))
 
