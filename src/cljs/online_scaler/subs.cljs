@@ -114,6 +114,7 @@
  ::attribute-numerical
   (fn [db [_ attribute]]
     (get-in db [:scaling (keyword attribute) :numerical])))
+
 ;;;-Export---------------------------------------------------------------------
 
 (re-frame/reg-sub

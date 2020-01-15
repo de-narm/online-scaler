@@ -22,6 +22,62 @@
 
 ;;;-Ordinal-Scale--------------------------------------------------------------
 
+(defn to-context
+  "Given a ordinal sclaing object computes the context out of an order if
+   needed."
+  [scaling]
+  (if (:context-view scaling)
+      scaling
+      (let [distinct-values   (get-in scaling [:distinct])
+            orders            (get-in scaling [:orders])]
+        (assoc-in 
+          scaling
+          [:incidence]
+          (loop [incidence {}
+                 remaining distinct-values]
+            (if (empty? remaining)
+                incidence
+                (let [value (first remaining)
+                      set-true  
+                        (apply concat
+                          (map
+                            (fn [order]
+                              (let [elements (:elements order)]
+                              (if (some #{value} elements)
+                              (case (:relation order)
+                                "<"  (take (.indexOf elements value) elements)
+                                ">"  (drop (+ 1 (.indexOf elements value))
+                                           elements)
+                                ">=" (drop (.indexOf elements value) elements)
+                                "<=" (take (+ 1 (.indexOf elements value))
+                                           elements))
+                              (list))))
+                            orders))
+                      set-false 
+                        (apply concat
+                          (map
+                            (fn [order]
+                              (let [elements (:elements order)]
+                              (if (some #{value} elements)
+                              (case (:relation order)
+                                "<"  (drop (.indexOf elements value) elements)
+                                ">"  (take (+ 1 (.indexOf elements value))
+                                           elements)
+                                ">=" (take (.indexOf elements value) elements)
+                                "<=" (drop (+ 1 (.indexOf elements value))
+                                           elements))
+                                (list))))
+                            orders))
+                       sub-incidence
+                        (apply merge
+                          (map 
+                            #(hash-map (keyword %) true)
+                            (clojure.set/difference (set set-true) 
+                                                    (set set-false))))]
+                  (recur (merge incidence 
+                                (hash-map (keyword value) sub-incidence))
+                         (drop 1 remaining)))))))))
+
 (defn ordinal-scale
   "Builds a map with distinct values and their corresponding incidence."
   [scaling]
@@ -53,7 +109,7 @@
   [scaling]
   (case (:measure scaling)
     "nominal" (nominal-scale scaling)
-    "ordinal" (ordinal-scale scaling)
+    "ordinal" (ordinal-scale (to-context scaling))
     nil))
 
 (defn apply-measure
@@ -83,7 +139,9 @@
          (fn [string] (str % "|" string))
          (case (:measure data)
            "nominal" (:distinct data)
-           "ordinal"  (:attributes data)
+           "ordinal" (if (:context-view data) 
+                         (:attributes data) 
+                         (:distinct data))
            nil)))
 		attributes))
 

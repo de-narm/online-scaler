@@ -347,7 +347,7 @@
         (map #(vector :option 
                       {:key (str (:pos order) %)} 
                       %) 
-             ["<" "<=" "=" ">=" ">"])]]])
+             ["<" "<=" ">=" ">"])]]])
 
 (defn ordinal-drag-single-order [attribute order]
   [:div {:class "container"}
@@ -538,16 +538,28 @@
                      [::subs/context-view current-attribute])]
     [:div
       [:div {:class "box"}
-        [:h5 {:class "title is-5"} "Ordinal Scaling"]
         (if is-context
-          [:div [ordinal-attribute-form current-attribute]
-                [ordinal-table current-attribute]
-                [:button {:class "button"
-                          :on-click 
-                            #(re-frame/dispatch 
-                              [::events/switch-to-drag nil])}
-                         "Reset"]]
-          [ordinal-drag current-attribute])]]))
+          [:div
+            [:div {:class "level is-marginless"}
+              [:h5 {:class "title is-5"} "Ordinal Scaling"]
+              [util/tooltip (str "Try clicking a field to change the context!"
+                                 " You can return to the previous screen, but"
+                                 " direct changes to the context will be" 
+                                 " lost.")]]
+            [ordinal-attribute-form current-attribute]
+            [ordinal-table current-attribute]
+            [:button {:class "button"
+                      :on-click 
+                        #(re-frame/dispatch 
+                          [::events/switch-to-drag nil])}
+                     "Reset"]]
+          [:div
+            [:div {:class "level is-marginless"}
+              [:h5 {:class "title is-5"} "Ordinal Scaling"]
+              [util/tooltip (str "Click the '+'-Button to create a new order,"
+                                 " then drag the values from the box below" 
+                                 " onto the relation fields!")]]
+            [ordinal-drag current-attribute]])]]))
 
 ;;;-Scale-Numeric--------------------------------------------------------------
 

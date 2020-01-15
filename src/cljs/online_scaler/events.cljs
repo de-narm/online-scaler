@@ -170,79 +170,22 @@
 ;;;-Ordinal-Scaling-Drag-------------------------------------------------------
 
 (re-frame/reg-event-db
- ::generate-context
+ ::set-context-view
   (fn [db _]
-    (let [current-attribute (get-in db [:selection :current-attribute])
-          distinct-values   (get-in db [:scaling (keyword current-attribute)
-                                        :distinct])
-          orders            (get-in db [:scaling (keyword current-attribute) 
-                                        :orders])]
-          ;;TODO in scaling datei schieben, equivalenz rausziehen
-      (assoc-in db
-                [:scaling (keyword current-attribute) :incidence]
-                (loop [incidence {}
-                       remaining distinct-values]
-                  (if (empty? remaining)
-                      incidence
-                      (let [value    (first remaining)
-                            set-true  
-                              (apply concat
-                                (map
-                                  (fn [order]
-                                    (let [elements (:elements order)]
-                                    (if (some #{value} elements)
-                                    (case (:relation order)
-                                      "<"  (take (.indexOf elements value) 
-                                                 elements)
-                                      ">"  (drop (+ 1
-                                                    (.indexOf elements value))
-                                                 elements)
-                                      ">=" (drop (.indexOf elements value) 
-                                                 elements)
-                                      "<=" (take (+ 1 
-                                                    (.indexOf elements value))
-                                                 elements))
-                                    (list))))
-                                  orders))
-                            set-false 
-                              (apply concat
-                                (map
-                                  (fn [order]
-                                    (let [elements (:elements order)]
-                                    (if (some #{value} elements)
-                                    (case (:relation order)
-                                      "<"  (drop (.indexOf elements value) 
-                                                 elements)
-                                      ">"  (take (+ 1
-                                                    (.indexOf elements value))
-                                                 elements)
-                                      ">=" (take (.indexOf elements value)
-                                                 elements)
-                                      "<=" (drop (+ 1
-                                                    (.indexOf elements value))
-                                                 elements))
-                                      (list))))
-                                  orders))
-                             sub-incidence
-                              (apply merge
-                                (map 
-                                  #(hash-map (keyword %) true)
-                                  (clojure.set/difference (set set-true) 
-                                                          (set set-false))))]
-                                  (print sub-incidence)
-                        (recur (merge incidence 
-                                      (hash-map (keyword value) sub-incidence))
-                               (drop 1 remaining)))))))))
+    (let [current-attribute (get-in db [:selection :current-attribute])]
+      (assoc-in db 
+                [:scaling (keyword current-attribute) :context-view]
+                true))))
 
 (re-frame/reg-event-fx
  ::switch-to-context
   (fn [cofx _]
-    {:dispatch [::generate-context nil]
+    {:dispatch [::set-context-view nil]
      :db (let [db (:db cofx)
                current-attribute (get-in db [:selection :current-attribute])]
-           (assoc-in db 
-                     [:scaling (keyword current-attribute) :context-view]
-                     true))}))
+           (update-in db
+                     [:scaling (keyword current-attribute)]
+                     #(scale/to-context %)))}))
 
 (re-frame/reg-event-db
  ::add-order
