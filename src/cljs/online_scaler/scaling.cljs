@@ -200,7 +200,7 @@
         ;; combine list of incidences into one
         incidence  (apply map concat (scale old-attributes scaling))
         ;; objects are just numbered
-        objects    (range (count incidence))]
+        objects    (get-in db [:ctx :objects])]
     (str \B \newline
          \newline
          (count objects) \newline

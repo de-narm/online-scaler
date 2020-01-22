@@ -15,9 +15,14 @@
     (get-in db [:mv-ctx :file])))
 
 (re-frame/reg-sub
- ::checkbox
+ ::header-checkbox
   (fn [db _]
     (get-in db [:mv-ctx :header])))
+
+(re-frame/reg-sub
+ ::objects-checkbox
+  (fn [db _]
+    (get-in db [:mv-ctx :has-names])))
 
 ;;;-Import---------------------------------------------------------------------
 

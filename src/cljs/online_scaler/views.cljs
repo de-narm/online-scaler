@@ -55,14 +55,23 @@
               [:font {:color "lightgrey"} "No file selected."]
               file-name)]]]))
 
-(defn upload-checkbox []
+(defn upload-header-checkbox []
 	[:label {:class "checkbox is-pulled-left"}
 		[:input {:type "checkbox"
-             :checked @(re-frame/subscribe [::subs/checkbox])
+             :checked @(re-frame/subscribe [::subs/header-checkbox])
              :on-change #(re-frame/dispatch
                           [::events/mv-ctx-header-change
                             (-> % .-target .-checked)])}]
 		        "Header?"])
+
+(defn upload-object-checkbox []
+	[:label {:class "checkbox is-pulled-left"}
+		[:input {:type "checkbox"
+             :checked @(re-frame/subscribe [::subs/objects-checkbox])
+             :on-change #(re-frame/dispatch
+                          [::events/mv-ctx-objects-change
+                            (-> % .-target .-checked)])}]
+		        "Objectnames?"])
 
 (defn upload-form []
   (let [file (re-frame/subscribe [::subs/mv-ctx-file])]
@@ -70,8 +79,9 @@
       [:div {:class "column"}
         [upload-file]]
       [:div {:class "column"}
-        [upload-checkbox]
+        [upload-header-checkbox]
         [:br]
+        [upload-object-checkbox]
         [:br]
         (if (not (nil? @file))
           [:button {:type "button"
@@ -374,10 +384,17 @@
                            [ordinal-drag-single-order attribute %]])
           orders))
        [:div {:class "column"} 
-         [:button {:class "button"
-                   :key "add-one"
-                   :on-click 
-                     #(re-frame/dispatch [::events/add-order nil])}
+         [:button (assoc util/drag-default
+                         :draggable false
+                         :on-drop
+                           (fn[a] (.preventDefault a)
+                                  (re-frame/dispatch
+                                    [::events/add-order
+                                      (.getData (.-dataTransfer a) "Text")]))
+                         :class "button"
+                         :key "add-one"
+                         :on-click 
+                           #(re-frame/dispatch [::events/add-order nil]))
                   "+"]]]))
 
 (defn ordinal-drag-single-attribute [value]
@@ -723,6 +740,13 @@
                                  listkey]])
                  :placeholder "Null"
                  :value (:name attribute)}]
+        ;; warn about use of generated names
+        (if (re-matches #"Attribute#[0-9]*" (:name attribute))
+            [:span {:class "icon is-medium has-text-info"
+                    :title (str "Name will apear in final context and" 
+                                " therefore should be changed!")} 
+              [:i {:class "fas fa-lg fa-info-circle"}]])
+        ;; doubling name warning
         (if @(re-frame/subscribe 
                   [::subs/multiple-names [(:name attribute) listkey]])
             [:span {:class "icon is-medium has-text-warning"
@@ -781,10 +805,16 @@
 (defn numeric-scale [current-attribute]
   [:div
     [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Selected Intervals"]
+      [:div {:class "level is-marginless"}
+              [:h5 {:class "title is-5"} "Selected Attributes"]
+              [util/tooltip (str "`Selected' attributes will be used to scale"
+                                 " the context. One attribute can have"
+                                 " multiple intervals. `Generated' attributes"
+                                 " will be ignored if they are not"
+                                 " selected.")]]
       [numeric-intervals current-attribute :selected]]
     [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Generate Intervals"]
+      [:h5 {:class "title is-5"} "Generate Attributes"]
       [numeric-generate-attributes current-attribute]
       [numeric-intervals current-attribute :generated]]])
 

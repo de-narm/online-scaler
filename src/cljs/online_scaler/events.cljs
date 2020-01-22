@@ -41,14 +41,21 @@
   (fn [db [_ value]]
     (assoc-in db [:mv-ctx :header] value)))
 
+(re-frame/reg-event-db
+ ::mv-ctx-objects-change
+  (fn [db [_ value]]
+    (assoc-in db [:mv-ctx :has-names] value)))
+
 (re-frame/reg-event-fx
  ::initiate-selection
   (fn [cofx _]
     {:dispatch [::set-panel "select"]
      :db  (let [db                (:db cofx)
                 header            (get-in db [:mv-ctx :header])
+                has-names         (get-in db [:mv-ctx :has-names])
                 mv-ctx            (get-in db [:mv-ctx :file])
-                attribute-vector  (if header
+                ;; header-check
+                raw-attributes    (if header
                                       ;; either use given names
                                       (mapv 
                                         #(vector (str %) true) 
@@ -57,11 +64,24 @@
                                       (mapv
                                         #(vector (str "Attribute#" %) true)
                                         (range (count (first mv-ctx)))))
-                nested-values     (apply map list 
-                                    (if header (drop 1 mv-ctx) mv-ctx))]
+                transposed        (apply map list 
+                                    (if header (drop 1 mv-ctx) mv-ctx))
+                ;; object-name-check
+                attribute-vector  (if (and has-names
+                                           (= (count (second mv-ctx))
+                                              (count raw-attributes)))
+                                      (drop 1 raw-attributes)
+                                      raw-attributes)
+                object-vector     (if has-names 
+                                      (first transposed)
+                                      (range (count (first transposed))))
+                nested-values     (if has-names
+                                      (drop 1 transposed)
+                                      transposed)]
           (-> db
             (assoc-in [:ctx :name] (get-in db [:mv-ctx :name]))
             (assoc-in [:ctx :attributes] attribute-vector)
+            (assoc-in [:ctx :objects] object-vector)
             (assoc-in [:scaling] 
               ;; for each attribute build a map with all its distinct values
               (apply merge
@@ -72,6 +92,7 @@
                             (every? 
                               identity
                               (map
+                                ;; accept any number
                                 #(re-matches #"\-?\d*\.?\d*" %)
                                 distinct-values))]
                     (hash-map 
@@ -189,13 +210,21 @@
 
 (re-frame/reg-event-db
  ::add-order
-  (fn [db _]
+  (fn [db [_ element]]
     (let [current-attribute (get-in db [:selection :current-attribute])]
-      (update-in db 
-                 [:scaling (keyword current-attribute) :orders]
-                 #(if (nil? %)
-                   [{:relation "<=" :pos 0 :elements []}]
-                   (conj % {:relation "<=" :pos (count %) :elements []}))))))
+      (if (nil? element)
+        (update-in db 
+                   [:scaling (keyword current-attribute) :orders]
+                   #(if (nil? %)
+                     [{:relation "<=" :pos 0 :elements []}]
+                     (conj % {:relation "<=" :pos (count %) :elements []})))
+        (update-in db 
+                   [:scaling (keyword current-attribute) :orders]
+                   #(if (nil? %)
+                     [{:relation "<=" :pos 0 :elements [element]}]
+                     (conj % {:relation "<=" 
+                              :pos (count %) 
+                              :elements [element]})))))))
 
 (re-frame/reg-event-db
  ::remove-order
@@ -429,7 +458,7 @@
                       [:scaling (keyword current-attribute) :selected]
                       #(if (nil? %)
                         [{:name "Attribute#0" :pos 0 :intervals []}]
-                        (conj % {:name (str "Attribute#" (count %)) 
+                        (conj % {:name (:name attribute) 
                                  :pos (count %) 
                                  :intervals (:intervals attribute)}))))}))
 

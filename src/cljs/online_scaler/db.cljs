@@ -13,10 +13,12 @@
    :mv-ctx  {:name        nil ;file name
              :file        nil ;nested list for .csv lines
              :header      false ;does .csv include attribute names?
+             :has-names   false ;does .csv include object names?
              }
    ;; once confirmed :ctx/:scaling get build and :mv-ctx becomes nil
    :ctx     {:name       nil
-             :attributes  nil ;list of pairs [attribute, scale?]
+             :attributes nil ;list of pairs [attribute, scale?]
+             :objects    nil ;[names]
              }
 
    ;;;-Scaling-----------------------------------------------------------------
