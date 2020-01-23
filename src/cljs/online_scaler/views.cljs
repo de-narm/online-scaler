@@ -5,6 +5,8 @@
    [online-scaler.view-util :as util]
    [online-scaler.events :as events]
    [online-scaler.subs :as subs]
+   [online-scaler.graphs :as graphs]
+   [oz.core :as oz]
    [goog.string :as gstring]))
 
 ;;;-Header---------------------------------------------------------------------
@@ -287,15 +289,105 @@
 
 ;;;-Scale-Statistics-----------------------------------------------------------
 
+(defn numeric-info [values]
+  [:div {:class "columns"}
+    [:div {:class "column is-half"}
+      [:b "Number of elements:"]
+      [:br][:hr {:class "is-marginless"}]
+      [:b "Minimum:"]
+      [:br]
+      [:b "Maximum:"]
+      [:br]
+      [:b "Mode:"]
+      [:br][:hr {:class "is-marginless"}]
+      [:b "Median:"]
+      [:br]
+      [:b "Mean:"]
+      [:br]
+      [:b "Standard Derivation:"]]
+    [:div {:class "column is-half"}
+      (count values)
+      [:br][:hr {:class "is-marginless"}]
+      (apply min values)
+      [:br]
+      (apply max values)
+      [:br]
+      (let [maxi (apply max-key val (frequencies values))]
+        (str (first maxi) " (" (last maxi) ")"))
+      [:br][:hr {:class "is-marginless"}]
+      (let [sorted (sort (distinct values))]
+        (nth sorted (int (/ (count sorted) 2))))
+      [:br]
+      (let [num (count values)
+            ;; done this way to avoid infinity
+            mean (.toFixed (reduce + (map #(/ % num) values)) 2)]
+        [:div
+          mean
+          [:br]
+          (.toFixed (reduce + (map #(- % mean) values)) 2)])]])
+
+(defn numeric-statistics [values]
+  (let [tmp @(re-frame/subscribe [::subs/tmp])]
+    [:div {:class "columns"}
+      [:div {:class "column is-half"}
+        [numeric-info values]]
+      [:div {:class "column is-half"}
+        (if tmp
+          [oz/vega-lite (graphs/density values)]
+          [:button {:class "button is-fullwidth"
+                    :style {:height "170px"}
+                    :on-click 
+                      #(re-frame/dispatch [::events/set-tmp true])}
+                   "Show graph"])]]))
+
+(defn ordinal-infos [values]
+  [:div {:class "columns"}
+    [:div {:class "column is-half"}
+      [:b "Number of elements:"]
+      [:br]
+      [:b "Unique elements:"]
+      [:br]
+      [:b "Most common element:"]
+      [:br]
+      [:b "Least common element:"]]
+    [:div {:class "column is-half"}
+      (count values)
+      [:br]
+      (count (set values))
+      [:br]
+      (let [maxi (apply max-key val (frequencies values))]
+        (str (first maxi) " (" (last maxi) ")"))
+      [:br]
+      (let [mini (apply min-key val (frequencies values))]
+        (str (first mini) " (" (last mini) ")"))]])
+
+(defn ordinal-statistics [values]
+  (let [tmp @(re-frame/subscribe [::subs/tmp])]
+    [:div {:class "columns"}
+      [:div {:class "column is-half"} 
+        [ordinal-infos values]]
+      [:div {:class "column is-half"}
+        (if tmp
+          [oz/vega-lite (graphs/bar values)]
+          [:button {:class "button is-fullwidth"
+                    :style {:height "100px"}
+                    :on-click 
+                      #(re-frame/dispatch [::events/set-tmp true])}
+                   "Show graph"])]]))
+
 (defn statistics-box [attribute]
-  (let [measure (re-frame/subscribe [::subs/attribute-measure attribute])]
+  (let [measure @(re-frame/subscribe [::subs/attribute-measure attribute])
+        values @(re-frame/subscribe [::subs/ctx-values attribute])]
     [:div {:class "box"}
-      [:h5 {:class "title is-5"} "Statistics"]]))
+      [:h5 {:class "title is-5"} "Statistics"]
+      (if (= measure "numeric")
+        [numeric-statistics values]
+        [ordinal-statistics values])]))
 
 ;;;-Scale-Ordinal-Drag---------------------------------------------------------
 
 (defn ordinal-drag-remove-button [order]
-  [:div {:class "s-fullwidth container has-text-centered"} 
+  [:div {:class "container has-text-centered"} 
     [:br]
     [:button {:class "button"
               :key "remove"

@@ -509,7 +509,9 @@
 (re-frame/reg-event-db
  ::set-current-attribute
   (fn [db [_ attribute]]
-    (assoc-in db [:selection :current-attribute] attribute)))
+    (-> db
+      (assoc-in [:tmp] nil)
+      (assoc-in [:selection :current-attribute] attribute))))
 
 (re-frame/reg-event-db
  ::next-attribute
@@ -520,7 +522,9 @@
                                  (+ (.indexOf attributes current-attribute) 1)
                                  (count attributes))
           next-attribute        (nth attributes next-position)]
-      (assoc-in db [:selection :current-attribute] next-attribute))))
+      (-> db
+        (assoc-in [:tmp] nil)
+        (assoc-in [:selection :current-attribute] next-attribute)))))
 
 (re-frame/reg-event-db
  ::previous-attribute
@@ -531,13 +535,17 @@
                                  (- (.indexOf attributes current-attribute) 1)
                                  (count attributes))
           next-attribute        (nth attributes next-position)]
-      (assoc-in db [:selection :current-attribute] next-attribute))))
+      (-> db
+        (assoc-in [:tmp] nil)
+        (assoc-in [:selection :current-attribute] next-attribute)))))
 
 (re-frame/reg-event-db
  ::change-measure
   (fn [db [_ measure]]
     (let [attribute (get-in db [:selection :current-attribute])]
-      (assoc-in db [:scaling (keyword attribute) :measure] measure))))
+      (-> db
+        (assoc-in [:tmp] nil)
+        (assoc-in [:scaling (keyword attribute) :measure] measure)))))
 
 ;;;-Export---------------------------------------------------------------------
 
@@ -576,7 +584,9 @@
 (re-frame/reg-event-db
  ::set-panel
   (fn [db [_ panel]]
-    (assoc-in db [:panel] panel)))
+    (-> db
+      (assoc-in [:tmp] nil)
+      (assoc-in [:panel] panel))))
 
 ;;;-Util-----------------------------------------------------------------------
 

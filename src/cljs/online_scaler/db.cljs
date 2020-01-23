@@ -74,5 +74,5 @@
 
    ;;;-Panel/Util--------------------------------------------------------------
    :panel   "import" ;current view
-   :tmp     nil ;helper between mouse-down/mouse-up events
+   :tmp     nil ;helper between mouse-down/mouse-up events and graphs
    })
