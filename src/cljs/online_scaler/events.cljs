@@ -70,7 +70,7 @@
                 attribute-vector  (if (and has-names
                                            (= (count (second mv-ctx))
                                               (count raw-attributes)))
-                                      (drop 1 raw-attributes)
+                                    (into [] (drop 1 raw-attributes))
                                       raw-attributes)
                 object-vector     (if has-names 
                                       (first transposed)
