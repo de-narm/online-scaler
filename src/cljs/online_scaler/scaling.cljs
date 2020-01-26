@@ -38,8 +38,8 @@
             (if (empty? remaining)
                 incidence
                 (let [value (first remaining)
-                      ;for the given value get all true implications from the
-                      ;orders
+                      ;; for the given value get all true implications from the
+                      ;; orders
                       set-true  
                         (apply concat
                           (map
@@ -55,7 +55,7 @@
                                            elements))
                               (list))))
                             orders))
-                      ;and all false implications
+                      ;; and all false implications
                       set-false 
                         (apply concat
                           (map
@@ -71,7 +71,7 @@
                                            elements))
                                 (list))))
                             orders))
-                       ;the difference gets actually marked as true
+                       ;; the difference gets actually marked as true
                        sub-incidence
                         (apply merge
                           (map 
@@ -112,7 +112,7 @@
   "Builds a map with distinct values and their corresponding incidence."
   [scaling]
   (let [values     (:distinct scaling)
-        attributes (:selected scaling)
+        attributes (filter identity (:selected scaling))
         matrix     (map
                      (fn [value]
                        (map 

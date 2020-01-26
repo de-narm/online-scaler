@@ -105,9 +105,10 @@
                                 :attributes   distinct-values))))
                   (map first attribute-vector)
                   nested-values)))
-            (assoc-in [:mv-ctx] {:name   nil
-                                 :file   nil
-                                 :header false})))}))
+            (assoc-in [:mv-ctx] {:name      nil
+                                 :file      nil
+                                 :header    false
+                                 :has-names false})))}))
 
 ;;;-Import---------------------------------------------------------------------
 
@@ -457,7 +458,8 @@
            (update-in db 
                       [:scaling (keyword current-attribute) :selected]
                       #(if (nil? %)
-                        [{:name "Attribute#0" :pos 0 :intervals []}]
+                        [{:name (:name attribute) :pos 0 
+                                 :intervals (:intervals attribute)}]
                         (conj % {:name (:name attribute) 
                                  :pos (count %) 
                                  :intervals (:intervals attribute)}))))}))

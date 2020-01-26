@@ -17,4 +17,20 @@
 ;;;-Density--------------------------------------------------------------------
 
 (defn density [values]
-	nil)
+  {:data {:values (for [[k v] (frequencies values)] 
+                       (hash-map :a (name k) :density (/ v (count values))))}
+	 :width 600
+	 :height 200
+	 :transform [:density "Values"
+               :bandwith 0.3]
+   :mark "area" 
+   :encoding {
+     :x {
+       :field "a"
+       :title "Values"
+       :type "quantitative"
+     }
+     :y {
+       :field "density"
+       :type "quantitative"}}})
+

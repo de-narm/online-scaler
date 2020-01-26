@@ -58,39 +58,41 @@
               file-name)]]]))
 
 (defn upload-header-checkbox []
+  [:div {:class "tile is-child"}
 	[:label {:class "checkbox is-pulled-left"}
 		[:input {:type "checkbox"
              :checked @(re-frame/subscribe [::subs/header-checkbox])
              :on-change #(re-frame/dispatch
                           [::events/mv-ctx-header-change
                             (-> % .-target .-checked)])}]
-		        "Header?"])
+		        "Header?"]])
 
 (defn upload-object-checkbox []
+  [:div {:class "tile is-child"}
 	[:label {:class "checkbox is-pulled-left"}
 		[:input {:type "checkbox"
              :checked @(re-frame/subscribe [::subs/objects-checkbox])
              :on-change #(re-frame/dispatch
                           [::events/mv-ctx-objects-change
                             (-> % .-target .-checked)])}]
-		        "Objectnames?"])
+		        "Objectnames?"]])
 
 (defn upload-form []
   (let [file (re-frame/subscribe [::subs/mv-ctx-file])]
     [:div {:class "columns"} 
-      [:div {:class "column"}
+      [:div {:class "column is-half"}
         [upload-file]]
-      [:div {:class "column"}
-        [upload-header-checkbox]
-        [:br]
-        [upload-object-checkbox]
-        [:br]
-        (if (not (nil? @file))
-          [:button {:type "button"
-                    :class "button is-large is-info is-pulled-left"
-                    :on-click #(re-frame/dispatch
-                               [::events/initiate-selection nil])}
-                   "Upload"])]]))
+      [:div {:class "column has-text-pulled-left"}
+        [:div {:class "tile is-parent is-vertical"}
+          [upload-header-checkbox]
+          [upload-object-checkbox]]]
+      [:div {:class "column has-text-pulled-left"}
+          (if (not (nil? @file))
+            [:button {:type "button"
+                      :class "button is-large is-info is-pulled-left"
+                      :on-click #(re-frame/dispatch
+                                 [::events/initiate-selection nil])}
+                     "Upload"])]]))
 
 ;;;-Import---------------------------------------------------------------------
 
@@ -328,10 +330,12 @@
 
 (defn numeric-statistics [values]
   (let [tmp @(re-frame/subscribe [::subs/tmp])]
-    [:div {:class "columns"}
-      [:div {:class "column is-half"}
-        [numeric-info values]]
-      [:div {:class "column is-half"}
+		[:div {:class "tile is-parent is-vertical"}                                 
+			[:div {:class "tile is-child columns"}                                    
+				[:div {:class "column is-half"}                                         
+					[numeric-info values]]                                               
+				[:div {:class "column is-half"}]]                                       
+			[:div {:class "tile is-child"} 
         (if tmp
           [oz/vega-lite (graphs/density values)]
           [:button {:class "button is-fullwidth"
@@ -340,7 +344,7 @@
                       #(re-frame/dispatch [::events/set-tmp true])}
                    "Show graph"])]]))
 
-(defn ordinal-infos [values]
+(defn ordinal-info [values]
   [:div {:class "columns"}
     [:div {:class "column is-half"}
       [:b "Number of elements:"]
@@ -365,7 +369,7 @@
   (let [tmp @(re-frame/subscribe [::subs/tmp])]
     [:div {:class "columns"}
       [:div {:class "column is-half"} 
-        [ordinal-infos values]]
+        [ordinal-info values]]
       [:div {:class "column is-half"}
         (if tmp
           [oz/vega-lite (graphs/bar values)]
