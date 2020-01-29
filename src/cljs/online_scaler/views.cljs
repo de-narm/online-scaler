@@ -217,12 +217,14 @@
           (doall (map select-single-attribute attributes))]]]])
 
 (defn select-panel []
-  (let [attributes (re-frame/subscribe [::subs/ctx-attributes])]
+  (let [attributes @(re-frame/subscribe [::subs/ctx-attributes])
+        values     @(re-frame/subscribe 
+                     [::subs/ctx-values (first (last attributes))])]
     [:div {:class "container is-fluid"}
       [select-preview]
       [:div {:class "columns"}
         [:div {:class "column"}
-          [select-attributes @attributes]]
+          [select-attributes attributes]]
         [:div {:class "column is-one-quarter"}
           [:div {:class "box has-text-centered"}
           [:button (merge 
@@ -231,7 +233,10 @@
                       :on-click #(re-frame/dispatch
                                  [::events/initiate-attributes nil])}
                      ;; test if all attributes are unselected
-                     (if (some identity (map second @attributes))
+(print values)
+                     (if (and 
+                           (some identity (map second attributes))
+													 values)
                        {}
                        {:disabled true}))
                    "Select"]]]]]))
