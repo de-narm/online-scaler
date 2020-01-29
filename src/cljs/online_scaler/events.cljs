@@ -3,6 +3,7 @@
    [cljs.reader :refer [read-string]]
    [clojure.string :refer [split]]
    [re-frame.core :as re-frame]
+   [goog.labs.format.csv :as csv]
    [online-scaler.scaling :as scale]
    [online-scaler.db :as db]))
 
@@ -19,15 +20,15 @@
  ::set-mv-ctx 
   (fn [db [_ result]]
     ;; Save file as [["First" "line" "in" ".csv"] ["Second" "line"]]
-    (assoc-in db [:mv-ctx :file] (map #(split % #", |,") 
-                                      (split result #"\n")))))
+    (assoc-in db [:mv-ctx :file] result)))
 
 (re-frame/reg-fx
   :read-mv-ctx
    (fn [file]
      (let [reader (js/FileReader.)]
        (set! (.-onload reader) 
-             #(re-frame/dispatch [::set-mv-ctx (-> % .-target .-result)]))
+             #(re-frame/dispatch 
+               [::set-mv-ctx (-> % .-target .-result csv/parse js->clj)]))
        (.readAsText reader file))))
 
 (re-frame/reg-event-fx 

@@ -291,7 +291,7 @@
 
 ;;;-Scale-Statistics-----------------------------------------------------------
 
-(defn numeric-info [values]
+(defn numeric-info-left [values]
   [:div {:class "columns"}
     [:div {:class "column is-half"}
       [:b "Number of elements:"]
@@ -300,13 +300,7 @@
       [:br]
       [:b "Maximum:"]
       [:br]
-      [:b "Mode:"]
-      [:br][:hr {:class "is-marginless"}]
-      [:b "Median:"]
-      [:br]
-      [:b "Mean:"]
-      [:br]
-      [:b "Standard Derivation:"]]
+      [:b "Mode:"]]
     [:div {:class "column is-half"}
       (count values)
       [:br][:hr {:class "is-marginless"}]
@@ -315,7 +309,18 @@
       (apply max values)
       [:br]
       (let [maxi (apply max-key val (frequencies values))]
-        (str (first maxi) " (" (last maxi) ")"))
+        (str (first maxi) " (" (last maxi) ")"))]])
+
+(defn numeric-info-right [values]
+	[:div {:class "columns"}
+    [:div {:class "column is-half"}
+      [:br][:hr {:class "is-marginless"}]
+      [:b "Median:"]
+      [:br]
+      [:b "Mean:"]
+      [:br]
+      [:b "Standard Derivation:"]]
+    [:div {:class "column is-half"}
       [:br][:hr {:class "is-marginless"}]
       (let [sorted (sort (distinct values))]
         (nth sorted (int (/ (count sorted) 2))))
@@ -333,13 +338,14 @@
 		[:div {:class "tile is-parent is-vertical"}                                 
 			[:div {:class "tile is-child columns"}                                    
 				[:div {:class "column is-half"}                                         
-					[numeric-info values]]                                               
-				[:div {:class "column is-half"}]]                                       
+					[numeric-info-left values]]                                               
+				[:div {:class "column is-half"}
+					[numeric-info-right values]]]                                       
 			[:div {:class "tile is-child"} 
         (if tmp
           [oz/vega-lite (graphs/density values)]
           [:button {:class "button is-fullwidth"
-                    :style {:height "170px"}
+                    :style {:height "75px"}
                     :on-click 
                       #(re-frame/dispatch [::events/set-tmp true])}
                    "Show graph"])]]))

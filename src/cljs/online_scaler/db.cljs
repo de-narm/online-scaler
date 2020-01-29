@@ -38,9 +38,10 @@
               ;;                    :distinct     [vals]
               ;;                    :context-view false
               ;;                    ---------Drag------------------------------
-              ;;                    :orders [{:relation "<"
-              ;;                              :pos      int ;pos on array
-              ;;                              :elements [vals]}]
+              ;;                    :attributes    [atts]
+              ;;                    :orders        [{:relation "<"
+              ;;                                     :pos      int ;array pos
+              ;;                                     :elements [vals]}]
               ;;                    ---------Context---------------------------
               ;;                    :attributes    [atts]
               ;;                    :incidence     {:att {:obj true}}

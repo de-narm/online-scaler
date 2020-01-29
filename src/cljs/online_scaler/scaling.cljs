@@ -23,8 +23,8 @@
 ;;;-Ordinal-Scale--------------------------------------------------------------
 
 (defn to-context
-  "Given a ordinal sclaing object computes the context out of an order if
-   needed."
+  "Given a ordinal scaling object computes the context out of an order if
+   needed. The flag decides whether or not empty attributes are kept."
   [scaling]
   (if (:context-view scaling)
       scaling
@@ -38,8 +38,8 @@
             (if (empty? remaining)
                 incidence
                 (let [value (first remaining)
-                      ;; for the given value get all true implications from the
-                      ;; orders
+                      ;; for the given value get all true implications from
+                      ;; the orders
                       set-true  
                         (apply concat
                           (map
@@ -47,10 +47,12 @@
                               (let [elements (:elements order)]
                               (if (some #{value} elements)
                               (case (:relation order)
-                                "<"  (take (.indexOf elements value) elements)
+                                "<"  (take (.indexOf elements value) 
+                                           elements)
                                 ">"  (drop (+ 1 (.indexOf elements value))
                                            elements)
-                                ">=" (drop (.indexOf elements value) elements)
+                                ">=" (drop (.indexOf elements value) 
+                                           elements)
                                 "<=" (take (+ 1 (.indexOf elements value))
                                            elements))
                               (list))))
@@ -63,10 +65,12 @@
                               (let [elements (:elements order)]
                               (if (some #{value} elements)
                               (case (:relation order)
-                                "<"  (drop (.indexOf elements value) elements)
+                                "<"  (drop (.indexOf elements value) 
+                                           elements)
                                 ">"  (take (+ 1 (.indexOf elements value))
                                            elements)
-                                ">=" (take (.indexOf elements value) elements)
+                                ">=" (take (.indexOf elements value) 
+                                           elements)
                                 "<=" (drop (+ 1 (.indexOf elements value))
                                            elements))
                                 (list))))
@@ -79,14 +83,17 @@
                             (clojure.set/difference (set set-true) 
                                                     (set set-false))))]
                   (recur (merge incidence 
-                                (hash-map (keyword value) sub-incidence))
+                           (hash-map (keyword value) sub-incidence))
                          (drop 1 remaining)))))))))
 
 (defn ordinal-scale
   "Builds a map with distinct values and their corresponding incidence."
   [scaling]
   (let [values     (:distinct scaling)
-        attributes (:attributes scaling)
+        attributes (if (:context-view scaling)
+                     (:attributes scaling)
+                     (distinct 
+                       (apply concat (map :elements (:orders scaling)))))
 				incidence  (:incidence scaling)
 				;; build #valuesX#attributes matrix based on incidence
 				matrix  (map
@@ -153,7 +160,7 @@
 (defn apply-measure
   "Applies scaling data to each object."
   [scaling]
-  (let [base-map        (select-function scaling)]
+  (let [base-map (select-function scaling)]
     ;; get the incidence row for each value
 		(map
 			#(get base-map %)
@@ -179,7 +186,8 @@
            "nominal" (:distinct data)
            "ordinal" (if (:context-view data) 
                          (:attributes data) 
-                         (:distinct data))
+                         (distinct 
+                           (apply concat (map :elements (:orders scaling)))))
            "numeric" (map :name 
                           (filter identity 
                                   (:selected data)))
