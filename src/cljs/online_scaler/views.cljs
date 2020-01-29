@@ -233,7 +233,6 @@
                       :on-click #(re-frame/dispatch
                                  [::events/initiate-attributes nil])}
                      ;; test if all attributes are unselected
-(print values)
                      (if (and 
                            (some identity (map second attributes))
 													 values)
