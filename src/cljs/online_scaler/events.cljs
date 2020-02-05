@@ -480,7 +480,7 @@
           stepsize          (if (= method "equal length")
                                 (/ (- (last sorted)
                                       (first sorted))
-                                   (+ number 1))
+                                   number)
                                 (/ (count sorted) (+ number 1)))
           divider           (concat 
                               (map

@@ -187,7 +187,7 @@
            "ordinal" (if (:context-view data) 
                          (:attributes data) 
                          (distinct 
-                           (apply concat (map :elements (:orders scaling)))))
+                           (apply concat (map :elements (:orders data)))))
            "numeric" (map :name 
                           (filter identity 
                                   (:selected data)))

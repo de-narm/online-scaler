@@ -318,6 +318,7 @@
 (defn numeric-info-right [values]
 	[:div {:class "columns"}
     [:div {:class "column is-half"}
+      [:b "Unique elements:"]
       [:br][:hr {:class "is-marginless"}]
       [:b "Median:"]
       [:br]
@@ -325,17 +326,24 @@
       [:br]
       [:b "Standard Derivation:"]]
     [:div {:class "column is-half"}
+      (count (set values))
       [:br][:hr {:class "is-marginless"}]
       (let [sorted (sort (distinct values))]
         (nth sorted (int (/ (count sorted) 2))))
       [:br]
       (let [num (count values)
             ;; done this way to avoid infinity
-            mean (.toFixed (reduce + (map #(/ % num) values)) 2)]
+            mean (.toFixed (reduce + (map #(/ % num) values)) 2)
+						stdd (.toFixed 
+                   (js/Math.sqrt 
+                     (reduce + (map 
+                                 #(/ (js/Math.pow (- % mean) 2) num) 
+                                 values)))
+                   2)]
         [:div
           mean
           [:br]
-          (.toFixed (reduce + (map #(- % mean) values)) 2)])]])
+          stdd])]])
 
 (defn numeric-statistics [values]
   (let [tmp @(re-frame/subscribe [::subs/tmp])]
@@ -348,10 +356,14 @@
 			[:div {:class "tile is-child"} 
         (if tmp
           [oz/vega-lite (graphs/density values)]
-          [:button {:class "button is-fullwidth"
-                    :style {:height "75px"}
-                    :on-click 
-                      #(re-frame/dispatch [::events/set-tmp true])}
+          [:button (merge
+										 (if (> (count (set values)) 1500)
+										   {:disabled true}
+											 {})
+                     {:class "button is-fullwidth"
+                      :style {:height "75px"}
+                      :on-click 
+                        #(re-frame/dispatch [::events/set-tmp true])})
                    "Show graph"])]]))
 
 (defn ordinal-info [values]
@@ -383,10 +395,14 @@
       [:div {:class "column is-half"}
         (if tmp
           [oz/vega-lite (graphs/bar values)]
-          [:button {:class "button is-fullwidth"
-                    :style {:height "100px"}
-                    :on-click 
-                      #(re-frame/dispatch [::events/set-tmp true])}
+          [:button (merge
+										 (if (> (count (set values)) 1500)
+										   {:disabled true}
+											 {})
+										 {:class "button is-fullwidth"
+											:style {:height "100px"}
+											:on-click 
+												#(re-frame/dispatch [::events/set-tmp true])})
                    "Show graph"])]]))
 
 (defn statistics-box [attribute]
