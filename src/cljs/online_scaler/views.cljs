@@ -298,7 +298,7 @@
 (defn numeric-info-left [values]
   [:div {:class "columns"}
     [:div {:class "column is-half"}
-      [:b "Number of elements:"]
+      [:b "Number of Objects:"]
       [:br][:hr {:class "is-marginless"}]
       [:b "Minimum:"]
       [:br]
@@ -318,13 +318,13 @@
 (defn numeric-info-right [values]
 	[:div {:class "columns"}
     [:div {:class "column is-half"}
-      [:b "Unique elements:"]
+      [:b "Unique Values:"]
       [:br][:hr {:class "is-marginless"}]
       [:b "Median:"]
       [:br]
       [:b "Mean:"]
       [:br]
-      [:b "Standard Derivation:"]]
+      [:b "Standard Deviation:"]]
     [:div {:class "column is-half"}
       (count (set values))
       [:br][:hr {:class "is-marginless"}]
@@ -356,26 +356,22 @@
 			[:div {:class "tile is-child"} 
         (if tmp
           [oz/vega-lite (graphs/density values)]
-          [:button (merge
-										 (if (> (count (set values)) 1500)
-										   {:disabled true}
-											 {})
-                     {:class "button is-fullwidth"
-                      :style {:height "75px"}
-                      :on-click 
-                        #(re-frame/dispatch [::events/set-tmp true])})
+          [:button {:class "button is-fullwidth"
+                    :style {:height "75px"}
+                    :on-click 
+                      #(re-frame/dispatch [::events/set-tmp true])}
                    "Show graph"])]]))
 
 (defn ordinal-info [values]
   [:div {:class "columns"}
     [:div {:class "column is-half"}
-      [:b "Number of elements:"]
+      [:b "Number of Objects:"]
       [:br]
-      [:b "Unique elements:"]
+      [:b "Unique Values:"]
       [:br]
-      [:b "Most common element:"]
+      [:b "Most common Value:"]
       [:br]
-      [:b "Least common element:"]]
+      [:b "Least common Value:"]]
     [:div {:class "column is-half"}
       (count values)
       [:br]

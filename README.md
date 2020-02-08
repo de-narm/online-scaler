@@ -4,6 +4,12 @@ A [re-frame](https://github.com/day8/re-frame) application designed to ... well,
 
 ## Development Mode
 
+```
+npm install -g karma-cli
+```
+
+The karma wrapper is needed globally to run tests.
+
 ### Run application:
 
 ```
