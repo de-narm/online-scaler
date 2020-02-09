@@ -1,5 +1,6 @@
 (ns online-scaler.scaling
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [clojure.set :refer [difference]]))
 
 ;;;-Nominal-Scale--------------------------------------------------------------
 
@@ -15,7 +16,7 @@
                       (range value-count))]
     ;; build map with {:value matrix-row}
     (apply merge
-      (map
+      (mapv
         (fn [value row] (hash-map value row))
         values
         matrix))))
@@ -45,17 +46,18 @@
                           (map
                             (fn [order]
                               (let [elements (:elements order)]
-                              (if (some #{value} elements)
-                              (case (:relation order)
-                                "<"  (take (.indexOf elements value) 
-                                           elements)
-                                ">"  (drop (+ 1 (.indexOf elements value))
-                                           elements)
-                                ">=" (drop (.indexOf elements value) 
-                                           elements)
-                                "<=" (take (+ 1 (.indexOf elements value))
-                                           elements))
-                              (list))))
+                                (if 
+                                  (some #{value} elements)
+                                  (case (:relation order)
+                                    "<"  (take (.indexOf elements value) 
+                                               elements)
+                                    ">"  (drop (+ 1 (.indexOf elements value))
+                                               elements)
+                                    ">=" (drop (.indexOf elements value) 
+                                               elements)
+                                    "<=" (take (+ 1 (.indexOf elements value))
+                                               elements))
+                                  (list))))
                             orders))
                       ;; and all false implications
                       set-false 
@@ -63,25 +65,26 @@
                           (map
                             (fn [order]
                               (let [elements (:elements order)]
-                              (if (some #{value} elements)
-                              (case (:relation order)
-                                "<"  (drop (.indexOf elements value) 
-                                           elements)
-                                ">"  (take (+ 1 (.indexOf elements value))
-                                           elements)
-                                ">=" (take (.indexOf elements value) 
-                                           elements)
-                                "<=" (drop (+ 1 (.indexOf elements value))
-                                           elements))
-                                (list))))
+                                (if 
+                                  (some #{value} elements)
+                                  (case (:relation order)
+                                    "<"  (drop (.indexOf elements value) 
+                                               elements)
+                                    ">"  (take (+ 1 (.indexOf elements value))
+                                               elements)
+                                    ">=" (take (.indexOf elements value) 
+                                               elements)
+                                    "<=" (drop (+ 1 (.indexOf elements value))
+                                               elements))
+                                    (list))))
                             orders))
                        ;; the difference gets actually marked as true
                        sub-incidence
                         (apply merge
                           (map 
                             #(hash-map (keyword %) true)
-                            (clojure.set/difference (set set-true) 
-                                                    (set set-false))))]
+                            (difference (set set-true) 
+                                        (set set-false))))]
                   (recur (merge incidence 
                            (hash-map (keyword value) sub-incidence))
                          (drop 1 remaining)))))))))
@@ -96,9 +99,9 @@
                        (apply concat (map :elements (:orders scaling)))))
 				incidence  (:incidence scaling)
 				;; build #valuesX#attributes matrix based on incidence
-				matrix  (map
+				matrix  (mapv
 									(fn [value]
-										(map 
+										(mapv 
 											(fn [attribute]
 												(if (get-in incidence [(keyword attribute)
 																							 (keyword value)])
@@ -141,7 +144,7 @@
                      values)]
     ;; build map with {:value matrix-row}
     (apply merge
-      (map
+      (mapv
         (fn [value row] (hash-map value row))
         values
         matrix))))

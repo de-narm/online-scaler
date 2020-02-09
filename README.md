@@ -10,6 +10,12 @@ npm install -g karma-cli
 
 The karma wrapper is needed globally to run tests.
 
+```
+export CHROME_BIN=chromium
+```
+
+CHROME_BIN needs to be set and therefore some kind of Chrome need to be installed.
+
 ### Run application:
 
 ```
