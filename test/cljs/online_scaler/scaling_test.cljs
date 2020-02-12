@@ -4,73 +4,106 @@
 
 
 (def db
-  {:scaling {:norm {:measure   "nominal"
+  {:ctx       {:objects ["#1" "#2" "#3" "#4"]
+               :attributes [["norm" true] ["conc2" true] ["numc2" true]]}
+   :selection {:attributes ["norm" "conc2" "numc2"]}
+   :scaling {:norm {:measure   "nominal"
                     :numerical false
                     :values    ["1" "3" "2" "3"]
                     :distinct  ["1" "3" "2"]}
-             :con11 {:distinct ["a" "b"]
+             :con11 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders   [{:relation "<"
                                  :elements ["a"]}]}
-             :con12 {:distinct   ["a" "b"]
+             :con12 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation "<"
                                    :elements ["b" "a"]}]}
-             :con21 {:distinct   ["a" "b"]
+             :con21 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation ">"
                                    :elements ["a"]}]}
-             :con22 {:distinct   ["a" "b"]
+             :con22 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation ">"
                                    :elements ["b" "a"]}]}
-             :con31 {:distinct   ["a" "b"]
+             :con31 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation "<="
                                    :elements ["a"]}]}
-             :con32 {:distinct   ["a" "b"]
+             :con32 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation "<="
                                    :elements ["b" "a"]}]}
-             :con41 {:distinct   ["a" "b"]
+             :con41 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation ">="
                                    :elements ["a"]}]}
-             :con42 {:distinct   ["a" "b"]
+             :con42 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation ">="
                                    :elements ["b" "a"]}]}
-             :conc1 {:distinct   ["a" "b"]
+             :conc1 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
                      :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
                      :orders     [{:relation ">"
                                    :elements ["b" "a"]}
                                   {:relation ">"
                                    :elements ["a" "b"]}]}
-             :conc2 {:distinct   ["a" "b" "c" "d"]
+             :conc2 {:measure   "ordinal"
+                     :distinct   ["a" "b" "c" "d"]
                      :attributes ["a" "b" "c" "d"]
+                     :values     ["a" "b" "c" "d"]
                      :orders     [{:relation ">"
                                    :elements ["a" "b" "c" "d"]}
                                   {:relation ">"
                                    :elements ["d" "b" "c" "a"]}]}
-             :num1  {:distinct   ["0" "1" "2" "3"]
+             :num1  {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
                      :selected   [{:name       "a"
                                    :intervals  [{:pos 0 :left "(" :start 0 
                                                         :end 2 :right ")"}]}]}
-             :num2  {:distinct   ["0" "1" "2" "3"]
+             :num2  {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
                      :selected   [{:name       "a"
                                    :intervals  [{:pos 0 :left "[" :start 0 
                                                         :end 2 :right "]"}]}]}
-             :num3  {:distinct   ["0" "1" "2" "3"]
+             :num3  {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
                      :selected   [{:name       "a"
                                    :intervals  [{:pos 0 :left "[" :start 0 
                                                         :end 2 :right ")"}]}]}
-             :numc1 {:distinct   ["0" "1" "2" "3"]
+             :numc1 {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
                      :selected   [{:name       "a"
                                    :intervals  [{:pos 0 :left "[" :start 0 
                                                         :end 2 :right ")"}
                                                 {:pos 1 :left "[" :start 2 
                                                         :end 3 :right "]"}]}]}
-             :numc2 {:distinct   ["0" "1" "2" "3"]
+             :numc2 {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
                      :selected   [{:name       "a"
                                    :intervals  [{:pos 0 :left "[" :start 0 
                                                         :end 2 :right ")"}]}
@@ -177,5 +210,11 @@
   (is (= (scale/numeric-scale (:numc2 (:scaling db)))
          {"3" ["." "X"], "1" ["X" "."], "0" ["X" "."], "2" ["." "X"]})))
 
-;intervall gen
-;write
+(deftest write
+  (is (= (scale/write db)
+         (str "B\n\n4\n9\n\n"
+              "#1\n#2\n#3\n#4\n"
+              "norm|1\nnorm|3\nnorm|2\n"
+              "conc2|a\nconc2|b\nconc2|c\nconc2|d\n"
+              "numc2|a\nnumc2|b\n"
+              "X......X.\n.X......X\n..X.X...X\n.X.....X."))))

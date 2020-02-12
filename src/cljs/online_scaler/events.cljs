@@ -473,15 +473,22 @@
     (let [current-attribute (get-in db [:selection :current-attribute])
           number            (read-string numberstring)
           sorted            (sort < 
-                                  (map read-string
-                                       (get-in db [:scaling
-                                                  (keyword current-attribute)
-                                                  :distinct])))
+                                  (if (= method "equal length")
+                                      (map read-string
+                                           (get-in db 
+                                                   [:scaling
+                                                    (keyword current-attribute)
+                                                    :distinct]))
+                                      (map read-string
+                                           (get-in db 
+                                                   [:scaling
+                                                    (keyword current-attribute)
+                                                    :values]))))
           stepsize          (if (= method "equal length")
                                 (/ (- (last sorted)
                                       (first sorted))
                                    number)
-                                (/ (count sorted) (+ number 1)))
+                                (/ (count sorted) number))
           divider           (concat 
                               (map
                                 #(if (= method "equal length")
