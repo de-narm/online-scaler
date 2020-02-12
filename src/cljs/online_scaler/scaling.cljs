@@ -10,13 +10,13 @@
   (let [values      (:distinct scaling)
         value-count (count values)
         ;; quadratic diagonal matrix with n = value-count
-        matrix      (map
+        matrix      (mapv
                       (fn [row position] (assoc row position "X"))
                       (repeat value-count (vec (repeat value-count ".")))
                       (range value-count))]
     ;; build map with {:value matrix-row}
     (apply merge
-      (mapv
+      (map
         (fn [value row] (hash-map value row))
         values
         matrix))))
@@ -89,14 +89,23 @@
                            (hash-map (keyword value) sub-incidence))
                          (drop 1 remaining)))))))))
 
+(defn- order-case
+  "Gets all elements from an order that result in a attribute."
+  [order]
+  (case (:relation order)
+    ">"      (drop-last 1 (filter identity (:elements order)))
+    "<"      (drop 1 (filter identity (:elements order)))
+             (:elements order)))
+
 (defn ordinal-scale
   "Builds a map with distinct values and their corresponding incidence."
   [scaling]
   (let [values     (:distinct scaling)
+        ;; remove empty attributes from orders
         attributes (if (:context-view scaling)
                      (:attributes scaling)
                      (distinct 
-                       (apply concat (map :elements (:orders scaling)))))
+                       (apply concat (map order-case (:orders scaling)))))
 				incidence  (:incidence scaling)
 				;; build #valuesX#attributes matrix based on incidence
 				matrix  (mapv
@@ -123,11 +132,11 @@
   [scaling]
   (let [values     (:distinct scaling)
         attributes (filter identity (:selected scaling))
-        matrix     (map
+        matrix     (mapv
                      (fn [value]
-                       (map 
+                       (mapv 
                          (fn [attribute] 
-                           (if  (every? identity 
+                           (if  (some identity 
                                   (map 
                                     (fn [interval] 
                                        (and 
@@ -144,7 +153,7 @@
                      values)]
     ;; build map with {:value matrix-row}
     (apply merge
-      (mapv
+      (map
         (fn [value row] (hash-map value row))
         values
         matrix))))
@@ -190,7 +199,7 @@
            "ordinal" (if (:context-view data) 
                          (:attributes data) 
                          (distinct 
-                           (apply concat (map :elements (:orders data)))))
+                           (apply concat (map order-case (:orders data)))))
            "numeric" (map :name 
                           (filter identity 
                                   (:selected data)))
@@ -209,7 +218,8 @@
 				;; get a list of all new attributes
         attributes (apply concat (get-attributes old-attributes scaling))
         ;; combine list of incidences into one
-        incidence  (apply map concat (scale old-attributes scaling))
+        incidence  (filter #(not (empty? %))
+                           (apply map concat (scale old-attributes scaling)))
         ;; objects are just numbered
         objects    (get-in db [:ctx :objects])]
     (str \B \newline
