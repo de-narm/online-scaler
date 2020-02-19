@@ -7,16 +7,45 @@
   {:ctx       {:objects ["#1" "#2" "#3" "#4"]
                :attributes [["norm" true] ["conc2" true] ["numc2" true]]}
    :selection {:attributes ["norm" "conc2" "numc2"]}
-   :scaling {:norm {:measure   "nominal"
-                    :numerical false
-                    :values    ["1" "3" "2" "3"]
-                    :distinct  ["1" "3" "2"]}
+   :scaling {:norm  {:measure   "nominal"
+                     :numerical false
+                     :values    ["1" "3" "2" "3"]
+                     :distinct  ["1" "3" "2"]}
              :con11 {:measure   "ordinal"
                      :distinct   ["a" "b"]
                      :attributes ["a" "b"]
                      :values     ["a" "b" "a" "a"]
                      :orders   [{:relation "<"
                                  :elements ["a"]}]}
+             :con01 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
+                     :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
+                     :orders     [{:relation "<"
+                                   :elements []}]}
+             :con02 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
+                     :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
+                     :orders     [{:relation "<="
+                                   :elements []}]}
+             :con03 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
+                     :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
+                     :orders     [{:relation ">"
+                                   :elements []}]}
+             :con04 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
+                     :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
+                     :orders     [{:relation ">="
+                                   :elements []}]}
+             :con05 {:measure   "ordinal"
+                     :distinct   ["a" "b"]
+                     :attributes ["a" "b"]
+                     :values     ["a" "b" "a" "a"]
+                     :orders     []}
              :con12 {:measure   "ordinal"
                      :distinct   ["a" "b"]
                      :attributes ["a" "b"]
@@ -75,6 +104,22 @@
                                    :elements ["a" "b" "c" "d"]}
                                   {:relation ">"
                                    :elements ["d" "b" "c" "a"]}]}
+             :num01 {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
+                     :selected   [{:name       "a"
+                                   :intervals  []}]}
+             :num02 {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
+                     :selected   [{:name       "a"
+                                   :intervals  []}
+                                  {:name       "b"
+                                   :intervals  []}]}
+             :num03 {:measure   "numeric"
+                     :distinct   ["0" "1" "2" "3"]
+                     :values     ["1" "3" "2" "0"]
+                     :selected   []}
              :num1  {:measure   "numeric"
                      :distinct   ["0" "1" "2" "3"]
                      :values     ["1" "3" "2" "0"]
@@ -117,6 +162,16 @@
          {"1" ["X" "." "."], "3" ["." "X" "."], "2" ["." "." "X"]})))
 
 (deftest ordinal-conversion
+  (is (= (:incidence (scale/to-context (:con01 (:scaling db))))
+         {:a nil :b nil}))
+  (is (= (:incidence (scale/to-context (:con02 (:scaling db))))
+         {:a nil :b nil}))
+  (is (= (:incidence (scale/to-context (:con03 (:scaling db))))
+         {:a nil :b nil}))
+  (is (= (:incidence (scale/to-context (:con04 (:scaling db))))
+         {:a nil :b nil}))
+  (is (= (:incidence (scale/to-context (:con05 (:scaling db))))
+         {:a nil :b nil}))
   (is (= (:incidence (scale/to-context (:con11 (:scaling db))))
          {:a nil :b nil}))
   (is (= (:incidence (scale/to-context (:con12 (:scaling db))))
@@ -183,6 +238,16 @@
          {"a" ["X" "X"], "b" ["." "X"]})))
 
 (deftest ordinal-drag
+  (is (= (scale/ordinal-scale (scale/to-context (:con01 (:scaling db))))
+         {"a" [], "b" []})) 
+  (is (= (scale/ordinal-scale (scale/to-context (:con02 (:scaling db))))
+         {"a" [], "b" []})) 
+  (is (= (scale/ordinal-scale (scale/to-context (:con03 (:scaling db))))
+         {"a" [], "b" []})) 
+  (is (= (scale/ordinal-scale (scale/to-context (:con04 (:scaling db))))
+         {"a" [], "b" []})) 
+  (is (= (scale/ordinal-scale (scale/to-context (:con05 (:scaling db))))
+         {"a" [], "b" []})) 
   (is (= (scale/ordinal-scale (scale/to-context (:con11 (:scaling db))))
          {"a" [], "b" []})) 
   (is (= (scale/ordinal-scale (scale/to-context (:con12 (:scaling db))))
@@ -197,6 +262,12 @@
          {"a" ["X"], "b" ["."]})))
 
 (deftest numeric
+  (is (= (scale/numeric-scale (:num01 (:scaling db)))
+         {"3" ["."], "1" ["."], "0" ["."], "2" ["."]}))
+  (is (= (scale/numeric-scale (:num02 (:scaling db)))
+         {"3" ["." "."], "1" ["." "."], "0" ["." "."], "2" ["." "."]}))
+  (is (= (scale/numeric-scale (:num03 (:scaling db)))
+         {"3" [], "1" [], "0" [], "2" []}))
   (is (= (scale/numeric-scale (:num1 (:scaling db)))
          {"3" ["."], "1" ["X"], "0" ["."], "2" ["."]}))
   (is (= (scale/numeric-scale (:num2 (:scaling db)))
