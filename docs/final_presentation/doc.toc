@@ -1,0 +1,16 @@
+\contentsline {section}{\numberline {1}Upload}{3}% 
+\contentsline {subsection}{\numberline {1.1}Features}{3}% 
+\contentsline {section}{\numberline {2}Attribute-Selection}{4}% 
+\contentsline {subsection}{\numberline {2.1}Features}{4}% 
+\contentsline {section}{\numberline {3}Scaling}{5}% 
+\contentsline {subsection}{\numberline {3.1}Features}{5}% 
+\contentsline {section}{\numberline {4}Scaling Graph}{6}% 
+\contentsline {subsection}{\numberline {4.1}Features}{6}% 
+\contentsline {section}{\numberline {5}Ordinal Scaling}{7}% 
+\contentsline {subsection}{\numberline {5.1}Features}{7}% 
+\contentsline {section}{\numberline {6}Ordinal Context Scaling}{8}% 
+\contentsline {subsection}{\numberline {6.1}Features}{8}% 
+\contentsline {section}{\numberline {7}Numeric Scaling}{9}% 
+\contentsline {subsection}{\numberline {7.1}Features}{9}% 
+\contentsline {section}{\numberline {8}Export panel}{10}% 
+\contentsline {subsection}{\numberline {8.1}Features}{10}% 
