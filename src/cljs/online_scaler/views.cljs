@@ -81,48 +81,57 @@
   (let [separator @(re-frame/subscribe
                         [::subs/mv-ctx-separator])]
     [:div {:class "tile is-child"}
-  	[:label {:class "checkbox is-pulled-left"}
-      "Separator: "
-      [:div {:class "select"}
-        [:select {:value separator
-                  :on-change #(re-frame/dispatch
-                               [::events/mv-ctx-separator-change 
-                                 (-> % .-target .-value)])}
-          ;(map #(vector :option {:key % }  %) @attribute-list)]
-          [:option "Comma"]
-          [:option "Semicolon"]
-          [:option "Tab"]
-          [:option "Space"]
-          [:option "Custom"]]]
-      (if (= separator "Custom")
-          [:input {:class "input is-marginless"
-                   :style {:width "99px"
-                           :border 0
-                           :box-shadow "none"}
-                   :on-change #(re-frame/dispatch
-                                [::events/mv-ctx-custom-separator-change
-                                  (-> % .-target .-value)])
-                   :placeholder "Seperator"
-                   :value @(re-frame/subscribe
-                            [::subs/mv-ctx-custom-separator])}])]]))
+  	  [:label {:class "checkbox is-pulled-left"}
+        [:div {:class "is-pulled-left"
+               :style {:padding-left "15px"}}
+              "Separator: "] 
+        [:br]
+        [:div {:class "select"}
+          [:select {:value separator
+                    :on-change #(re-frame/dispatch
+                                 [::events/mv-ctx-separator-change 
+                                   (-> % .-target .-value)])}
+            ;(map #(vector :option {:key % }  %) @attribute-list)]
+            [:option "Comma"]
+            [:option "Semicolon"]
+            [:option "Tab"]
+            [:option "Space"]
+            [:option "Custom"]]]
+        (if (= separator "Custom")
+            [:input {:class "input"
+                     :style {:width "99px"
+                             :margin-left "5px"
+                             :box-shadow "none"}
+                     :on-change #(re-frame/dispatch
+                                  [::events/mv-ctx-custom-separator-change
+                                    (-> % .-target .-value)])
+                     :placeholder "Seperator"
+                     :value @(re-frame/subscribe
+                              [::subs/mv-ctx-custom-separator])}])]]))
           
 (defn upload-form []
   (let [file (re-frame/subscribe [::subs/mv-ctx-file])]
     [:div {:class "columns"} 
       [:div {:class "column is-half"}
         [upload-file]]
-      [:div {:class "column has-text-pulled-left"}
-        [:div {:class "tile is-parent is-vertical"}
-          [upload-header-checkbox]
-          [upload-object-checkbox]
-          [upload-separator-field]]]
-      [:div {:class "column has-text-pulled-left"}
-          (if (not (nil? @file))
-            [:button {:type "button"
-                      :class "button is-large is-info is-pulled-left"
-                      :on-click #(re-frame/dispatch
-                                 [::events/initiate-selection nil])}
-                     "Upload"])]]))
+      [:div {:class "column has-text-pulled-left"
+             :style {:padding "0px"}}
+        [:div {:class "tile is-parent is-vertical"
+               :style {:padding "0px"}}
+          [:div {:class "tile"}
+            [:div {:class "tile is-parent is-vertical"}
+              [upload-header-checkbox]
+              [upload-object-checkbox]]
+            [:div {:class "tile"}
+                (if (not (nil? @file))
+                  [:button {:type "button"
+                            :class "button is-large is-info is-pulled-left"
+                            :style {:margin-top "10px"}
+                            :on-click #(re-frame/dispatch
+                                       [::events/initiate-selection nil])}
+                           "Upload"])]]
+          [:div {:class "tile"}
+            [upload-separator-field]]]]]))
 
 ;;;-Import---------------------------------------------------------------------
 

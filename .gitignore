@@ -9,3 +9,4 @@
 /resources/public/js/compiled
 out
 .shadow-cljs/
+.lein*
