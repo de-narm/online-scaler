@@ -87,7 +87,9 @@
                                         #(vector (str "Attribute#" %) true)
                                         (range (count (first mv-ctx)))))
                 transposed        (apply map list 
-                                    (if header (drop 1 mv-ctx) mv-ctx))
+                                    (filter 
+                                      seq
+                                      (if header (drop 1 mv-ctx) mv-ctx)))
                 ;; object-name-check
                 attribute-vector  (if (and has-names
                                            (= (count (second mv-ctx))
