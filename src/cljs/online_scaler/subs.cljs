@@ -24,6 +24,16 @@
   (fn [db _]
     (get-in db [:mv-ctx :has-names])))
 
+(re-frame/reg-sub
+ ::mv-ctx-separator
+  (fn [db _]
+    (get-in db [:mv-ctx :separator])))
+
+(re-frame/reg-sub
+ ::mv-ctx-custom-separator
+  (fn [db _]
+    (get-in db [:mv-ctx :custom])))
+
 ;;;-Import---------------------------------------------------------------------
 
 (re-frame/reg-sub

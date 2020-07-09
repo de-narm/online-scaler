@@ -1,9 +1,9 @@
-/*.log
-/*.toc
-/*.aux
-/*.nav
-/*.out
-/*.snm
+*.log
+*.toc
+*.aux
+*.nav
+*.out
+*.snm
 /target
 /*-init.clj
 /resources/public/js/compiled

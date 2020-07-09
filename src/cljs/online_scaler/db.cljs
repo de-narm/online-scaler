@@ -14,6 +14,8 @@
              :file        nil ;nested list for .csv lines
              :header      false ;does .csv include attribute names?
              :has-names   false ;does .csv include object names?
+             :separator   "Comma" ;separation symbol for .csv file
+             :custom      nil ;custom seperator
              }
    ;; once confirmed :ctx/:scaling get build and :mv-ctx becomes nil
    :ctx     {:name       nil
@@ -75,5 +77,5 @@
 
    ;;;-Panel/Util--------------------------------------------------------------
    :panel   "import" ;current view
-   :tmp     nil ;helper between mouse-down/mouse-up events and graphs
+   :tmp     nil ;helper for mouse-down/mouse-up events and graphs
    })

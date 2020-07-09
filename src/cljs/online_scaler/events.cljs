@@ -28,7 +28,7 @@
      (let [reader (js/FileReader.)]
        (set! (.-onload reader) 
              #(re-frame/dispatch 
-               [::set-mv-ctx (-> % .-target .-result csv/parse js->clj)]))
+               [::set-mv-ctx (-> % .-target .-result)]))
        (.readAsText reader file))))
 
 (re-frame/reg-event-fx 
@@ -47,6 +47,16 @@
   (fn [db [_ value]]
     (assoc-in db [:mv-ctx :has-names] value)))
 
+(re-frame/reg-event-db
+ ::mv-ctx-separator-change
+  (fn [db [_ value]]
+    (assoc-in db [:mv-ctx :separator] value)))
+    
+(re-frame/reg-event-db
+ ::mv-ctx-custom-separator-change
+  (fn [db [_ value]]
+    (assoc-in db [:mv-ctx :custom] value)))
+    
 (re-frame/reg-event-fx
  ::initiate-selection
   (fn [cofx _]
@@ -54,7 +64,18 @@
      :db  (let [db                (:db cofx)
                 header            (get-in db [:mv-ctx :header])
                 has-names         (get-in db [:mv-ctx :has-names])
-                mv-ctx            (get-in db [:mv-ctx :file])
+                separator         (get-in db [:mv-ctx :separator])
+                mv-ctx            (js->clj 
+                                    (csv/parse 
+                                      (get-in db [:mv-ctx :file])
+                                      true
+                                      (case (get-in db [:mv-ctx :separator])
+                                        "Comma" ","
+                                        "Semicolon" ";"
+                                        "Tab" "\t"
+                                        "Space" " "
+                                        "Custom" 
+                                          (get-in db [:mv-ctx :custom]))))
                 ;; header-check
                 raw-attributes    (if header
                                       ;; either use given names
@@ -109,7 +130,9 @@
             (assoc-in [:mv-ctx] {:name      nil
                                  :file      nil
                                  :header    false
-                                 :has-names false})))}))
+                                 :has-names false
+                                 :separator "Comma"
+                                 :custom    nil})))}))
 
 ;;;-Import---------------------------------------------------------------------
 

@@ -65,7 +65,7 @@
              :on-change #(re-frame/dispatch
                           [::events/mv-ctx-header-change
                             (-> % .-target .-checked)])}]
-		        "Header?"]])
+		"Header?"]])
 
 (defn upload-object-checkbox []
   [:div {:class "tile is-child"}
@@ -75,8 +75,37 @@
              :on-change #(re-frame/dispatch
                           [::events/mv-ctx-objects-change
                             (-> % .-target .-checked)])}]
-		        "Objectnames?"]])
+		"Objectnames?"]])
 
+(defn upload-separator-field []
+  (let [separator @(re-frame/subscribe
+                        [::subs/mv-ctx-separator])]
+    [:div {:class "tile is-child"}
+  	[:label {:class "checkbox is-pulled-left"}
+      "Separator: "
+      [:div {:class "select"}
+        [:select {:value separator
+                  :on-change #(re-frame/dispatch
+                               [::events/mv-ctx-separator-change 
+                                 (-> % .-target .-value)])}
+          ;(map #(vector :option {:key % }  %) @attribute-list)]
+          [:option "Comma"]
+          [:option "Semicolon"]
+          [:option "Tab"]
+          [:option "Space"]
+          [:option "Custom"]]]
+      (if (= separator "Custom")
+          [:input {:class "input is-marginless"
+                   :style {:width "99px"
+                           :border 0
+                           :box-shadow "none"}
+                   :on-change #(re-frame/dispatch
+                                [::events/mv-ctx-custom-separator-change
+                                  (-> % .-target .-value)])
+                   :placeholder "Seperator"
+                   :value @(re-frame/subscribe
+                            [::subs/mv-ctx-custom-separator])}])]]))
+          
 (defn upload-form []
   (let [file (re-frame/subscribe [::subs/mv-ctx-file])]
     [:div {:class "columns"} 
@@ -85,7 +114,8 @@
       [:div {:class "column has-text-pulled-left"}
         [:div {:class "tile is-parent is-vertical"}
           [upload-header-checkbox]
-          [upload-object-checkbox]]]
+          [upload-object-checkbox]
+          [upload-separator-field]]]
       [:div {:class "column has-text-pulled-left"}
           (if (not (nil? @file))
             [:button {:type "button"
