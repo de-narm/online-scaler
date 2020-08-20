@@ -1,3 +1,7 @@
+## *Disclaimer*
+
+*This source code was written as part of a project at the "Universität Kassel Fachgebiet Wissensverarbeitung Fachbereich 16" by Sebastian Benner. The project was supervised by Maximilan Felde.*
+
 # online-scaler
 
 A [re-frame](https://github.com/day8/re-frame) application designed to scale many-valued contexts into formal contexts.
